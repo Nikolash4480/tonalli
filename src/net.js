@@ -151,7 +151,7 @@ function netHud(){let el=$('netHud');if(!NET.on){el&&el.remove();return}
   NET.room=r;NET.order=r.order||[];NET.seat=NET.order.indexOf(NET.uid);NET.on=true;NET.rev=r.rev||0;
   if(NET.seat<0){NET.on=false;netForget();return toast('No formás parte de esa partida')}
   $('ovTitle').classList.add('hidden');['ovMenu','ovSetup','ovOnline','ovLobby'].forEach(i=>$(i)&&$(i).classList.add('hidden'));
-  const sn=netSnap(r);NET.applying=true;try{if(sn.seed!==SEED){netStash(sn);return location.reload()}SAVED=sn;continueGame()}finally{NET.applying=false}
+  const sn=netSnap(r);NET.applying=true;try{if(sn.seed!==SEED){netStash(sn);return location.reload()}if(G){G.players.forEach(p=>p.obj&&removeBillboard(p.obj));G.beasts.forEach(b=>b.obj&&removeBillboard(b.obj))}SAVED=sn;continueGame()}finally{NET.applying=false}
   NET.driving=G.cur===NET.seat;netBeat();netListen();
   if(r.status==='over'){NET.applying=true;try{endGame()}finally{NET.applying=false}}
   else if(NET.driving)toast('¡Es tu turno!');update();netHud()},350)})();

@@ -961,4 +961,5 @@ function startTutorial(){
 {const _sv=saveGame;saveGame=function(){if(G&&G.tut)return;return _sv.apply(this,arguments)}}
 {const _ub2=upgradeBeasts;upgradeBeasts=function(){if(G&&G.tut)return;return _ub2.apply(this,arguments)}}
 if(TUT)setTimeout(startTutorial,300);
-;(()=>{let r=false;try{r=sessionStorage.getItem('sendaJaguar.resume')==='1';sessionStorage.removeItem('sendaJaguar.resume')}catch(e){}if(r&&SAVED&&SAVED.v===1)setTimeout(()=>{try{$('ovTitle').classList.add('hidden');continueGame()}catch(e){}},300)})();
+;(()=>{let r=false;try{r=sessionStorage.getItem('sendaJaguar.resume')==='1';sessionStorage.removeItem('sendaJaguar.resume')}catch(e){}let onl=false;try{const s=JSON.parse(sessionStorage.getItem('sendaJaguar.net')||'null');onl=!!(s&&s.code)}catch(e){}/* online: la reconexión ya retoma la partida */
+ if(r&&!onl&&SAVED&&SAVED.v===1)setTimeout(()=>{try{$('ovTitle').classList.add('hidden');continueGame()}catch(e){}},300)})();
