@@ -219,7 +219,7 @@ input{font-family:'VT323',monospace;font-size:20px;background:var(--ink);color:#
 
 <div class="ov hidden" id="ovDetails"><div class="win"><div id="dBody"></div>
   <div class="sec">Configuración</div><label class="row" style="margin:4px 0;font-size:18px">Música <input type="range" min="0" max="1" step=".05" id="vMus" style="flex:1" oninput="UI.vol('music',this.value)"></label><label class="row" style="margin:4px 0 8px;font-size:18px">Efectos <input type="range" min="0" max="1" step=".05" id="vSfx" style="flex:1" oninput="UI.vol('sfx',this.value)"></label><button id="bQ" style="width:100%" onclick="UI.quality()">Calidad: alta</button><button id="bBlur" style="width:100%;margin-top:5px" onclick="UI.blur()">Desenfoque</button><button id="bGfx" style="width:100%;margin-top:5px" onclick="UI.gfx()">Mapa: tablero de mesa</button>
-  <div class="g2" style="margin-top:10px"><button onclick="UI.help()">Cómo se juega</button><button onclick="UI.bestiary()">Bestiario</button></div><button class="pri" style="width:100%;margin-top:6px" onclick="document.getElementById('ovDetails').classList.add('hidden')">Cerrar</button>
+  <div class="g2" style="margin-top:10px"><button onclick="UI.help()">Cómo se juega</button><button onclick="UI.bestiary()">Bestiario</button></div><button id="bMenu" style="width:100%;margin-top:6px" onclick="UI.toMenu()">Volver al menú principal</button><button class="pri" style="width:100%;margin-top:6px" onclick="document.getElementById('ovDetails').classList.add('hidden')">Cerrar</button>
 </div></div>
 
 <div class="ov hidden" id="ovBoard"><div class="win"><div class="px gold" style="margin-bottom:8px">Cartas de las ciudades</div><div id="boardBody"></div>

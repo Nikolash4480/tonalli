@@ -153,3 +153,13 @@ Object.assign(UI,{
 });
 {const _mo=UI.menuOnline;UI.menuOnline=function(){const r=_mo.apply(this,arguments);$('onName').value=netName()||'';let last=null;try{last=localStorage.getItem('sendaJaguar.netlast')}catch(e){}$('onLast').classList.toggle('hidden',!last);if(last)$('onLast').textContent='Volver a la sala '+last;$('onLast').onclick=()=>netJoin(last);return r}}
 {const _sr=showRings;showRings=function(){const r=_sr.apply(this,arguments);if(NET.on&&!NET.driving)rings.forEach(o=>o.visible=false);return r}}
+
+/* volver al menú principal desde la partida */
+UI.toMenu=()=>{if(B){toast('Terminá el combate antes de salir');return}
+ const online=NET.on;const msg=online?'¿Salir de la partida online? Podés volver a entrar con el código '+NET.code+'.':'¿Volver al menú principal? La partida queda guardada y la podés continuar.';
+ if(!confirm(msg))return;
+ try{if(!online&&G&&!G.over&&!G.tut)saveGame()}catch(e){}
+ if(online){try{sessionStorage.removeItem('sendaJaguar.net')}catch(e){}}
+ try{sessionStorage.setItem('sendaJaguar.toMenu','1')}catch(e){}location.reload()};
+;(()=>{let m=false;try{m=sessionStorage.getItem('sendaJaguar.toMenu')==='1';sessionStorage.removeItem('sendaJaguar.toMenu')}catch(e){}if(m)setTimeout(()=>{try{$('ovTitle').classList.add('hidden');UI.menuShow()}catch(e){}},300)})();
+{const _sd=showDetails;showDetails=function(){const r=_sd.apply(this,arguments);const b=$('bMenu');if(b){b.classList.toggle('hidden',!!(G&&G.tut));b.textContent=NET.on?'Salir de la partida online':'Volver al menú principal'}return r}}
