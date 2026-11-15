@@ -14,7 +14,7 @@ const HEROES={
  pochteca:{name:'Cazador de Mixcóatl',desc:'Reflejos: una vez por combate, recibe 1 de daño menos de un golpe (mínimo 1)'}};
 const HK=Object.keys(HEROES);
 const BEASTS={
- calaca:{name:'Calaca del Mictlán',lvl:1,str:3,atk:1,glory:1,eff:'Saqueo: te roba un recurso',scale:1,trophy:'hueso'},
+ calaca:{name:'Calaca del Mictlán',lvl:1,str:3,atk:2,glory:1,eff:'Saqueo: te roba un recurso',scale:1,trophy:'hueso'},
  tzitzimitl:{name:'Tzitzimitl',lvl:2,str:7,atk:1,glory:2,eff:'Eclipse: tu próxima tirada vale 2 menos',scale:1,trophy:'garra'},
  tlaltecuhtli:{name:'Tlaltecuhtli',lvl:3,str:6,atk:2,glory:4,eff:'Mil fauces: su ataque hace el doble',scale:1,trophy:'colmillo'},
  xiuhcoatl:{name:'Xiuhcóatl',lvl:4,str:11,atk:2,glory:8,eff:'Llamarada: su ataque hace el triple',scale:1,trophy:'corazon',boss:true},
@@ -261,10 +261,10 @@ const beastsAt=h=>G.beasts.filter(b=>b.q===h.q&&b.r===h.r);
 const LAIRS={1:[],2:[],3:[]},LAIRN={1:2,2:2,3:2},CAP={calaca:6,tzitzimitl:4,tlaltecuhtli:3,ahuizotl:6,chaneque:6,xolotl:4,nahual:4,tepeyollotl:3,quinametzin:3,xochitonal:3,xiuhcoatl:1,jaguarsol:1,alacran:1,tzinacan:1,guerrero:1},START={calaca:5,tzitzimitl:3,tlaltecuhtli:2};
 const LAIRCOL={1:0xffa040,2:0xb070ff,3:0xff3030};
 (function pickLairs(){const used=[];const free=h=>!TERR[h.t].water&&!TERR[h.t].city&&!TERR[h.t].district&&!used.includes(h)&&cities.every(c=>hdist(c,h)>=2);
- const nearT=(h,t)=>nbrs(hexes,h).some(n=>n.t===t);const prefs={3:[h=>h.t==='V'||(h.t==='C'&&nearT(h,'V')),h=>nearT(h,'L')],2:[h=>h.t==='C',h=>h.t==='M'||h.t==='S'],1:[h=>h.t==='S',h=>nearT(h,'L')||h.t==='M']};
+ const nearT=(h,t)=>nbrs(hexes,h).some(n=>n.t===t);const prefs={3:[h=>h.t==='V',h=>h.t==='V'],2:[h=>h.t==='C',h=>h.t==='M'||h.t==='S'],1:[h=>h.t==='S',h=>nearT(h,'L')||h.t==='M']};
  const dCap=h=>hdist(h,capital);
  for(const lvl of [3,2,1])for(let n=0;n<LAIRN[lvl];n++){
-  let c=allHex.filter(h=>free(h)&&prefs[lvl][n%2](h)&&dCap(h)>=3);if(!c.length)c=allHex.filter(h=>free(h)&&dCap(h)>=3);
+  let c=allHex.filter(h=>free(h)&&prefs[lvl][n%2](h)&&dCap(h)>=3);if(!c.length&&lvl===3)c=allHex.filter(h=>free(h)&&prefs[3][0](h)&&dCap(h)>=2);if(!c.length&&lvl===3)c=allHex.filter(h=>free(h)&&h.t==='C'&&nearT(h,'V')&&dCap(h)>=2);if(!c.length)c=allHex.filter(h=>free(h)&&dCap(h)>=3);if(!c.length)c=allHex.filter(h=>free(h)&&dCap(h)>=2);
   const score=h=>Math.min(dCap(h)+1,...used.map(u=>hdist(u,h)*(u.lair===lvl?1.4:1)),99)+rnd()*.8;
   c.sort((x,y)=>score(y)-score(x));const h=c[0];if(!h)continue;LAIRS[lvl].push(h);used.push(h);h.lair=lvl}
  const em=c=>new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:1.6});const glow={1:em(0xffa040),2:em(0xb070ff),3:em(0xff3020)};
@@ -553,7 +553,7 @@ function renderBattle(){
  <div class="row mut" style="gap:6px;font-size:17px"><span style="width:48%">Vida ${Math.max(0,p.hp)}/${p.maxHp} · PA ${p.ap}</span><span style="width:48%;text-align:right">Fuerza ${Math.max(0,meter)}/${B.max}</span></div>${B.curse?'<div style="color:#b08aff;font-size:17px">Eclipse: −2 a tu próxima tirada</div>':''}${B.garra?'<div style="color:#c0a0ff;font-size:17px">Garra estelar: +2 a tu próxima tirada</div>':''}`;
  let c;
  if(B.over&&B.next&&p.hp>0)c=`<button class="pri" onclick="UI.nextFight()">Enfrentar a ${B.next?BEASTS[B.next.kind].name:''}</button><button onclick="UI.fleeNext()">Huir · ${p.ap>=1?'1 PA':'1 vida'}</button>`;
- else if(B.over)c=`<button class="pri" style="grid-column:span 2" onclick="UI.closeBattle()">Volver al mapa</button>`;
+ else if(B.over){c='';if(!B.autoClose){const bb=B;B.autoClose=setTimeout(()=>{if(B===bb&&!B.closing){B.closing=true;closeBattle()}},1800)}}
  else if(B.pending!=null)c=`<button class="pri" onclick="UI.accept()">Aceptar</button><button onclick="UI.reroll()">Repetir (${B.rerolls})</button>`;
  else c=`<button class="pri" onclick="UI.roll()" ${B.busy?'disabled':''}>Tirar dado · 1 PA</button><button onclick="UI.flee()" ${B.busy||(B.noFlee&&!B.over&&B.p.ap>=1)?'disabled':''}>Huir · ${p.ap>=1?'1 PA':'1 vida'}</button>${['copal','agua'].filter(k=>has(p,k)&&!(p.used||{})[k]&&p.hp<p.maxHp).map(k=>`<button onclick="UI.bUse('${k}')" ${B.busy?'disabled':''}>${ITEMS[k].name}</button>`).join('')}${p.trophies.garra&&!B.garra?`<button onclick="UI.garra()" ${B.busy?'disabled':''}>Garra (+2)</button>`:''}`;
  $('bCmds').innerHTML=c;
@@ -579,8 +579,8 @@ function resolve(f){
  else if(f==='bestia'){const heal=Math.min(2+2*upN(b,'sed'),B.max-B.meter);B.meter+=heal;effect=true;text=heal?`¡Cara de bestia! ${d.name} se cura ${heal}.`:`¡Cara de bestia! ${d.name} se enfurece.`;
   const pos=bp();burst(pos,40,0xb070ff,1.6,{up:true,grav:.6,life:1.2});ringFx(b.obj.position.clone().add(new THREE.Vector3(0,.05,0)),0xb070ff,2.2,.8);if(heal)floatText('+'+heal,pos.clone().add(new THREE.Vector3(0,.7,0)),'#d0a0ff');flash(b.obj,0xb070ff,400)}
  else{
-  const crit=f==='azul';if(f===2&&has(p,'pelota'))f=3;const bonus=crit?0:(p.hero==='jaguar'?1:0)+(has(p,'macuahuitl')?1:0)+(B.first&&has(p,'atlatl')?2:0)+(B.first&&has(p,'munequeras')?1:0)+(d.lvl>=3&&has(p,'tepoz')?2:0)+(p.trophies.colmillo?1:0)+B.garra-B.curse;const armor=upN(b,'coraza')+(b.kind==='alacran'?1:0)+(b.kind==='jaguarsol'&&!has(p,'espejo')?1:0);const critD=d.lvl<=2?4:d.boss?4:6;let dmg=crit?Math.min(B.meter,critD):Math.max(0,f+bonus-armor);const tzDodge=!crit&&b.kind==='tzinacan'&&(G.phase===2||G.omen==='eclipse')&&Math.random()<1/3;if(tzDodge)dmg=0;B.garra=0;
-  text=crit?(B.meter<=critD?'¡Golpe azul! Un ataque crítico que la derriba.':`¡Golpe azul! Ataque crítico: ${Math.min(B.meter,critD)} de daño.`):`Sacaste ${f}${bonus?` ${bonus>0?'+':''}${bonus}`:''}${B.curse?' (eclipse)':''}${armor?` −${armor} ${b.kind==='jaguarsol'?'piel divina':b.kind==='alacran'?'caparazón':'coraza'}`:''}: ${dmg} de daño.${tzDodge?' ¡El Tzinacan se desvanece en la noche y esquiva!':''}`;B.curse=0;
+  const crit=f==='azul';if(f===2&&has(p,'pelota'))f=3;const BP=crit?[]:[[p.hero==='jaguar'?1:0,'jaguar'],[has(p,'macuahuitl')?1:0,'macuahuitl'],[B.first&&has(p,'atlatl')?2:0,'átlatl'],[B.first&&has(p,'munequeras')?1:0,'muñequeras'],[d.lvl>=3&&has(p,'tepoz')?2:0,'tepoztopilli'],[p.trophies.colmillo?1:0,'colmillo'],[B.garra,'garra'],[-B.curse,'eclipse']].filter(x=>x[0]);const bonus=BP.reduce((s,x)=>s+x[0],0);const armor=upN(b,'coraza')+(b.kind==='alacran'?1:0)+(b.kind==='jaguarsol'&&!has(p,'espejo')?1:0);const critD=d.lvl<=2?4:d.boss?4:6;let dmg=crit?Math.min(B.meter,critD):Math.max(0,f+bonus-armor);const tzDodge=!crit&&b.kind==='tzinacan'&&(G.phase===2||G.omen==='eclipse')&&Math.random()<1/3;if(tzDodge)dmg=0;B.garra=0;
+  text=crit?(B.meter<=critD?'¡Golpe azul! Un ataque crítico que la derriba.':`¡Golpe azul! Ataque crítico: ${Math.min(B.meter,critD)} de daño.`):`Sacaste ${f}${BP.map(([v,l])=>` ${v>0?'+':'−'}${Math.abs(v)} ${l}`).join('')}${armor?` −${armor} ${b.kind==='jaguarsol'?'piel divina':b.kind==='alacran'?'caparazón':'coraza'}`:''}: ${dmg} de daño.${tzDodge?' ¡El Tzinacan se desvanece en la noche y esquiva!':''}`;B.curse=0;
   lunge(p.obj,b.obj.position,crit?.7:.45,()=>{});
   setTimeout(()=>{if(B!==bb)return;B.meter-=dmg;const pos=bp();flash(b.obj,crit?0x7ab0ff:0xffffff);doShake(crit?.22:.1,crit?420:240);
    if(crit){burst(pos,90,0x7ab0ff,4,{life:1});ringFx(pos,0x7ab0ff,3.2,.7);ringFx(pos,0xffffff,2,.4);bloomKick=1.4;floatText('¡CRÍTICO!',pos.clone().add(new THREE.Vector3(0,.9,0)),'#9ac0ff',1.3)}
