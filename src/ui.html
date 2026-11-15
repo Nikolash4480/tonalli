@@ -122,6 +122,11 @@ input{font-family:'VT323',monospace;font-size:20px;background:var(--ink);color:#
 .setupLinks{margin:6px 0 2px}.setupLinks button{text-align:center;font-size:16px;padding:6px 2px}
 #ovBest>.win::before,#ovBest>.win::after,#ovHelp>.win::after,#ovSetup>.win::before{display:none}
 .mbig{display:block;width:100%;text-align:center;padding:12px 10px;margin:6px 0}.mbig b{display:block;font-size:24px}.mbig small{display:block;font-size:15px;opacity:.75;margin-top:2px}
+.htabs{display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 4px}.htab{padding:4px 8px;font-size:15px}.hcard{background:rgba(255,255,255,.04);border:1px solid rgba(227,176,75,.22);border-radius:8px;padding:8px 10px;margin:8px 0}.hcard p{margin:6px 0}
+.hrow{display:flex;align-items:center;gap:10px;margin:7px 0}.hico{min-width:46px;display:flex;justify-content:center;align-items:center;gap:2px}
+.hex{border-left:3px solid #e3b04b;background:rgba(227,176,75,.08);padding:6px 10px;margin:8px 0;border-radius:0 6px 6px 0;font-size:17px}
+.hgrid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center;margin:6px 0}.hgrid3>div{background:rgba(0,0,0,.25);border-radius:6px;padding:6px}
+.hhex{display:inline-block;width:20px;height:22px;background:#e3b04b;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
@@ -238,25 +243,7 @@ input{font-family:'VT323',monospace;font-size:20px;background:var(--ink);color:#
 </div></div>
 <div class="ov hidden" id="ovHelp" style="z-index:12"><div class="win">
   <div class="px gold" style="margin-bottom:6px">Cómo se juega</div>
-  <div style="font-size:18px">
-  <p>Cada jugador es un héroe del valle. Gana quien termina con más <b>gloria</b>. Arrastrá para girar la cámara y pellizcá para hacer zoom.</p>
-  <p><b>Calendario.</b> 5 o 7 días. Mañana 6 PA, tarde 6 PA, noche 4 PA. Todos juegan un turno por fase.</p>
-  <p><b>Acciones.</b> Moverse a un hexágono vecino (1 PA; subir a un volcán, 2), recolectar (1 PA; minar piedra u obsidiana, 2), luchar (1), entregar una carta o descansar en una ciudad (1). El agua no se cruza (salvo con canoa). Si entrás en un hexágono con una bestia, te embosca y empieza el combate (salvo con la Máscara de Mictlán o si la bestia está en Letargo).</p>
-  <p><b>Recursos.</b> Milpa: maíz. Selva: madera. Cerro: piedra. Volcán: obsidiana. Cada hexágono tiene 2 cargas (los cubitos blancos) que vuelven al amanecer. No se recolecta con una bestia al lado.</p>
-  <p><b>Cartas de ciudad.</b> Cada ciudad (también el Teocalli Mayor) tiene un mazo de 5 cartas con objetos exclusivos. La carta visible pide recursos; si la cumplís ganás gloria y su objeto. La siguiente carta aparece al amanecer. Tocá el ícono de tablero arriba para ver todas.</p>
-  <p><b>Combate.</b> Empezar es gratis; cada tirada cuesta 1 PA (repetir no). Si te quedás sin PA te retirás y la bestia conserva sus heridas hasta el amanecer. Huir cuesta 1 PA (si no tenés, 1 de vida, sin bajar de 1). El dado resta 2 a 5 a la fuerza de la bestia; el <span style="color:#9ac0ff">golpe azul</span> es un crítico (4 de daño a las de nivel 1 y 2 y a los jefes, 6 a las de nivel 3); la <span style="color:#ff7a5a">cara de bestia</span> la cura 2 y activa su <b>habilidad de bestia</b>. Si sigue en pie, te ataca. Podés huir.</p>
-  <p><b>Bestias.</b> Fácil: Calaca del Mictlán (fuerza 3, roba un recurso al empezar el combate; deja un Hueso del Mictlán, +1 de gloria al final). Intermedia: Tzitzimitl (fuerza 7, eclipse: −2 a tu próxima tirada; deja una Garra estelar, +2 a una tirada). Difícil: Tlaltecuhtli (fuerza 6, ataque doble; deja un Colmillo, +1 a todas tus tiradas).</p>
-  <p><b>Jefe.</b> Al amanecer del penúltimo día despierta el Xiuhcóatl, la serpiente de fuego: fuerza 11, ataque 2 y Llamarada (ataque triple). No se lo puede azuzar ni vuelve si lo vencés. Si sigue vivo al amanecer del último día, recibe la Furia del Quinto Sol (+3 fuerza, +1 ataque). Da 8 de gloria y su Corazón (+5 al final).</p>
-  <p><b>Presagios.</b> Se eligen al empezar (apagados, ocasionales 35 % o frecuentes 65 % por día). Desde el día 2, un amanecer puede traer un presagio: Lluvias de Tláloc (maíz doble), Eclipse (todo el día es noche, bestias +1), Fiesta del Sol (cartas +1 gloria), Migración (las bestias se mueven), Viento de Ehécatl (1 movimiento gratis), Erupción (obsidiana doble, subir quita 1 de vida) o Niebla del Mictlán (sin emboscadas).</p>
-  <p><b>Guardado.</b> La partida se guarda sola al inicio de cada turno en este navegador.</p>
-  <p><b>Mejoras de las bestias.</b> Los amaneceres de los días 3 y 5 (en partidas de 5 días, solo el 3) todas las bestias reciben una mejora al azar, y las que reaparecen llegan con el mismo nivel. El último día solo se enfurece el Xiuhcóatl. Las cartas posibles: Piel de obsidiana (+2 fuerza), Colmillos afilados (+1 ataque), Sed de sangre (se cura más), Coraza de jade (−1 daño por tirada) o Furia nocturna (+1 ataque de noche) o Letargo (queda pasiva). Se acumulan, y cada mejora suma +1 de gloria al vencerla.</p>
-  <p><b>Dignidad.</b> Si caés, tu turno termina (no hay acecho), volvés al Teocalli Mayor con la vida llena, perdés la mitad de tus recursos y 1 de dignidad: 1 PA menos por fase y 2 puntos menos al final. Tus objetos y trofeos se conservan.</p>
-  <p><b>Acecho.</b> Al terminar tu turno tenés furia (más cuanto más herido estás). Mover una bestia cuesta 1: la calaca salta hasta 2 casillas y te roba al caer, el Tzitzimitl vuela hasta 3 (también sobre el agua) y el Tlaltecuhtli avanza 1. Invocar, 2 a 4. Si cae sobre un héroe, le quita 1 de vida (el Chimalli lo bloquea). Varias bestias pueden compartir hexágono. Las ciudades y el Barrio del Teocalli tienen guardias: las bestias no entran.</p>
-  <p><b>Guaridas.</b> Cada bestia tiene sus guaridas: tzompantli de cráneos con velas naranjas (calaca), arco de obsidiana con ojo estelar violeta (Tzitzimitl) y fauces de la tierra con pozo rojo (Tlaltecuhtli). Hay 2 guaridas por tipo, alejadas entre sí. Al empezar, las bestias se reparten cerca de ellas; después reaparecen al amanecer en sus guaridas (las eligen los jugadores por turnos rotativos, para presionar a sus rivales, o al azar si la reaparición es automática) o se invocan ahí. Arrancan siempre 5 calacas, 3 tzitzimime y 2 tlaltecuhtlis (máximo 6, 4 y 3).</p>
-  <p><b>Cacerías.</b> Hay una por bestia. En el Teocalli Mayor elegís a qué cacería entregar (1 PA cada entrega); cada una acepta solo los trofeos de su bestia: calaca 7 huesos (1·2·3·4·6·8·10 pts), Tzitzimitl 5 garras (1·3·5·8·12) y Tlaltecuhtli 3 colmillos (4·8·13). El primero en completarla se corona campeón y la cierra; los demás conservan sus puntos. En combate también podés gastar un trofeo para sumar a tu próxima tirada: hueso +1, garra +1, colmillo +2 (uno por tirada). Ojo: el trofeo entregado o gastado pierde su efecto.</p>
-  <p><b>Opciones.</b> Altares de Ehécatl: viajás entre altares por 2 PA (gratis con Viento de Ehécatl). Quinta ciudad: juegan las 4 ciudades temáticas. Mercado: en Xalpan cambiás 2 recursos iguales por 1 a elección (1 PA).</p>
-  <p><b>Puntaje.</b> Gloria, cacerías, +3 por vencer a los tres tipos de bestia, huesos (+1) y colmillos (+2) que no usaste, penacho, −2 por dignidad perdida.</p>
-  </div>
+  <div id="helpTabs" class="htabs"></div><div id="helpBody" style="font-size:18px;max-height:62vh;overflow:auto;margin:6px 0 8px"></div>
   <button class="pri" style="width:100%" onclick="document.getElementById('ovHelp').classList.add('hidden')">Entendido</button>
 </div></div>
 <div id="load" class="px">Cargando el valle…</div>
