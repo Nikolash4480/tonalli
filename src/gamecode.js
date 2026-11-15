@@ -37,14 +37,15 @@ const BOSS_INFO={
  tzinacan:{wake:'¡Despertó el Tzinacan!',how:'Una nube de murciélagos sube del Mictlán y se junta en uno solo.',sign:'¡Tzinacan!',lair:'any',pas:'Ala de la noche: de noche esquiva 1 de cada 3 golpes.'}};
 const bossName=()=>BEASTS[(G&&G.bossKind)||'xiuhcoatl'].name;
 const TROPHY={
- hueso:{name:'Hueso del Mictlán',desc:'+1 de gloria al final por cada uno'},
- garra:{name:'Garra estelar',desc:'Se usa en combate: +2 a la próxima tirada'},
+ hueso:{name:'Hueso del Mictlán',desc:'Se usa en combate: +1 a la próxima tirada. Si lo guardás, +1 de gloria al final'},
+ garra:{name:'Garra estelar',desc:'Se usa en combate: +1 a la próxima tirada'},
  corazon:{name:'Corazón de Xiuhcóatl',desc:'+5 de gloria al final'},
  pielsol:{name:'Piel del Primer Sol',desc:'+6 de gloria al final'},
  aguijon:{name:'Aguijón de Yappan',desc:'+5 de gloria al final'},
  ala:{name:'Ala de Tzinacan',desc:'+5 de gloria al final'},
  disco:{name:'Disco del sol apagado',desc:'+8 de gloria al final'},
- colmillo:{name:'Colmillo de Tlaltecuhtli',desc:'+1 a todas tus tiradas (los extra valen +2 de gloria al final)'}};
+ colmillo:{name:'Colmillo de Tlaltecuhtli',desc:'Se usa en combate: +2 a la próxima tirada. Si lo guardás, +2 de gloria al final'}};
+const TRO_BON={hueso:1,garra:1,colmillo:2};
 const UPGRADES={
  piel:{name:'Piel de obsidiana',desc:'+2 de fuerza'},
  colmillos:{name:'Colmillos afilados',desc:'+1 de ataque'},
@@ -452,9 +453,9 @@ function upgradeBeasts(){const plan=(UP_PLAN[G.days]||UP_PLAN[7])[G.day];if(!pla
 function ko(p,why){
  if(G&&p===curP()&&!G.over)G.endAfterKO=true;
  const from=p.obj.position.clone().add(new THREE.Vector3(0,.5,0));burst(from,50,0xb070ff,2.2,{up:true,life:1.1});
- p.dignityLost++;p.hp=p.maxHp;p.q=capital.q;p.r=capital.r;p.ap=0;p.obj.position.copy(hexCenter(capital));
+ p.dignityLost++;p.hp=p.maxHp;{const tot=RK.reduce((s,k)=>s+(p.res[k]||0),0);let n=Math.ceil(tot/2);const lost={};while(n>0){const own=RK.filter(k=>p.res[k]>0);if(!own.length)break;const k=rpick(own);p.res[k]--;lost[k]=(lost[k]||0)+1;n--}p._lostRes=Object.entries(lost).map(([k,v])=>`${v} de ${RES[k].toLowerCase()}`).join(', ')}p.q=capital.q;p.r=capital.r;p.ap=0;p.obj.position.copy(hexCenter(capital));
  const to=hexCenter(capital).add(new THREE.Vector3(0,.5,0));setTimeout(()=>{burst(to,40,0xf0c040,2,{up:true});ringFx(to,0xf0c040)},250);
- log(`${p.name} cae ${why}. Despierta en el Teocalli Mayor y pierde 1 de dignidad.`);
+ log(`${p.name} cae ${why}. Despierta en el Teocalli Mayor y pierde 1 de dignidad${p._lostRes?' y '+p._lostRes:''}.`);if(p._lostRes)setTimeout(()=>toast(`${p.name} pierde ${p._lostRes}`),600);
 }
 
 /* ================= acciones ================= */
@@ -550,12 +551,12 @@ function renderBattle(){
  const{p,d,meter}=B;
  $('bBars').innerHTML=`<div class="row" style="gap:6px"><span style="color:${p.color};width:48%">${p.name}</span><span style="width:48%;text-align:right">${d.name}</span></div>
  <div class="row" style="gap:6px"><div class="bar" style="width:48%"><i style="width:${clamp(p.hp/p.maxHp,0,1)*100}%"></i></div><div class="bar" style="width:48%"><i style="width:${clamp(meter/B.max,0,1)*100}%;background:linear-gradient(#b08aff,#5a3080)"></i></div></div>
- <div class="row mut" style="gap:6px;font-size:17px"><span style="width:48%">Vida ${Math.max(0,p.hp)}/${p.maxHp} · PA ${p.ap}</span><span style="width:48%;text-align:right">Fuerza ${Math.max(0,meter)}/${B.max}</span></div>${B.curse?'<div style="color:#b08aff;font-size:17px">Eclipse: −2 a tu próxima tirada</div>':''}${B.garra?'<div style="color:#c0a0ff;font-size:17px">Garra estelar: +2 a tu próxima tirada</div>':''}`;
+ <div class="row mut" style="gap:6px;font-size:17px"><span style="width:48%">Vida ${Math.max(0,p.hp)}/${p.maxHp} · PA ${p.ap}</span><span style="width:48%;text-align:right">Fuerza ${Math.max(0,meter)}/${B.max}</span></div>${B.curse?'<div style="color:#b08aff;font-size:17px">Eclipse: −2 a tu próxima tirada</div>':''}${B.garra?`<div style="color:#c0a0ff;font-size:17px">${B.troK?TROPHY[B.troK].name:'Trofeo'}: +${B.garra} a tu próxima tirada</div>`:''}`;
  let c;
  if(B.over&&B.next&&p.hp>0)c=`<button class="pri" onclick="UI.nextFight()">Enfrentar a ${B.next?BEASTS[B.next.kind].name:''}</button><button onclick="UI.fleeNext()">Huir · ${p.ap>=1?'1 PA':'1 vida'}</button>`;
  else if(B.over){c='';if(!B.autoClose){const bb=B;B.autoClose=setTimeout(()=>{if(B===bb&&!B.closing){B.closing=true;closeBattle()}},1800)}}
  else if(B.pending!=null)c=`<button class="pri" onclick="UI.accept()">Aceptar</button><button onclick="UI.reroll()">Repetir (${B.rerolls})</button>`;
- else c=`<button class="pri" onclick="UI.roll()" ${B.busy?'disabled':''}>Tirar dado · 1 PA</button><button onclick="UI.flee()" ${B.busy||(B.noFlee&&!B.over&&B.p.ap>=1)?'disabled':''}>Huir · ${p.ap>=1?'1 PA':'1 vida'}</button>${['copal','agua'].filter(k=>has(p,k)&&!(p.used||{})[k]&&p.hp<p.maxHp).map(k=>`<button onclick="UI.bUse('${k}')" ${B.busy?'disabled':''}>${ITEMS[k].name}</button>`).join('')}${p.trophies.garra&&!B.garra?`<button onclick="UI.garra()" ${B.busy?'disabled':''}>Garra (+2)</button>`:''}`;
+ else c=`<button class="pri" onclick="UI.roll()" ${B.busy?'disabled':''}>Tirar dado · 1 PA</button><button onclick="UI.flee()" ${B.busy||(B.noFlee&&!B.over&&B.p.ap>=1)?'disabled':''}>Huir · ${p.ap>=1?'1 PA':'1 vida'}</button>${['copal','agua'].filter(k=>has(p,k)&&!(p.used||{})[k]&&p.hp<p.maxHp).map(k=>`<button onclick="UI.bUse('${k}')" ${B.busy?'disabled':''}>${ITEMS[k].name}</button>`).join('')}${B.garra?'':Object.keys(TRO_BON).filter(k=>p.trophies[k]>0).map(k=>`<button onclick="UI.trophy('${k}')" ${B.busy?'disabled':''}>${TROPHY[k].name.split(' ')[0]} (+${TRO_BON[k]}) ×${p.trophies[k]}</button>`).join('')}`;
  $('bCmds').innerHTML=c;
 }
 const dieCtx=$('dieC').getContext('2d');
@@ -579,7 +580,7 @@ function resolve(f){
  else if(f==='bestia'){const heal=Math.min(2+2*upN(b,'sed'),B.max-B.meter);B.meter+=heal;effect=true;text=heal?`¡Cara de bestia! ${d.name} se cura ${heal}.`:`¡Cara de bestia! ${d.name} se enfurece.`;
   const pos=bp();burst(pos,40,0xb070ff,1.6,{up:true,grav:.6,life:1.2});ringFx(b.obj.position.clone().add(new THREE.Vector3(0,.05,0)),0xb070ff,2.2,.8);if(heal)floatText('+'+heal,pos.clone().add(new THREE.Vector3(0,.7,0)),'#d0a0ff');flash(b.obj,0xb070ff,400)}
  else{
-  const crit=f==='azul';if(f===2&&has(p,'pelota'))f=3;const BP=crit?[]:[[p.hero==='jaguar'?1:0,'jaguar'],[has(p,'macuahuitl')?1:0,'macuahuitl'],[B.first&&has(p,'atlatl')?2:0,'átlatl'],[B.first&&has(p,'munequeras')?1:0,'muñequeras'],[d.lvl>=3&&has(p,'tepoz')?2:0,'tepoztopilli'],[p.trophies.colmillo?1:0,'colmillo'],[B.garra,'garra'],[-B.curse,'eclipse']].filter(x=>x[0]);const bonus=BP.reduce((s,x)=>s+x[0],0);const armor=upN(b,'coraza')+(b.kind==='alacran'?1:0)+(b.kind==='jaguarsol'&&!has(p,'espejo')?1:0);const critD=d.lvl<=2?4:d.boss?4:6;let dmg=crit?Math.min(B.meter,critD):Math.max(0,f+bonus-armor);const tzDodge=!crit&&b.kind==='tzinacan'&&(G.phase===2||G.omen==='eclipse')&&Math.random()<1/3;if(tzDodge)dmg=0;B.garra=0;
+  const crit=f==='azul';if(f===2&&has(p,'pelota'))f=3;const BP=crit?[]:[[p.hero==='jaguar'?1:0,'jaguar'],[has(p,'macuahuitl')?1:0,'macuahuitl'],[B.first&&has(p,'atlatl')?2:0,'átlatl'],[B.first&&has(p,'munequeras')?1:0,'muñequeras'],[d.lvl>=3&&has(p,'tepoz')?2:0,'tepoztopilli'],[B.garra,B.troK?TROPHY[B.troK].name.split(' ')[0].toLowerCase():'trofeo'],[-B.curse,'eclipse']].filter(x=>x[0]);const bonus=BP.reduce((s,x)=>s+x[0],0);const armor=upN(b,'coraza')+(b.kind==='alacran'?1:0)+(b.kind==='jaguarsol'&&!has(p,'espejo')?1:0);const critD=d.lvl<=2?4:d.boss?4:6;let dmg=crit?Math.min(B.meter,critD):Math.max(0,f+bonus-armor);const tzDodge=!crit&&b.kind==='tzinacan'&&(G.phase===2||G.omen==='eclipse')&&Math.random()<1/3;if(tzDodge)dmg=0;B.garra=0;
   text=crit?(B.meter<=critD?'¡Golpe azul! Un ataque crítico que la derriba.':`¡Golpe azul! Ataque crítico: ${Math.min(B.meter,critD)} de daño.`):`Sacaste ${f}${BP.map(([v,l])=>` ${v>0?'+':'−'}${Math.abs(v)} ${l}`).join('')}${armor?` −${armor} ${b.kind==='jaguarsol'?'piel divina':b.kind==='alacran'?'caparazón':'coraza'}`:''}: ${dmg} de daño.${tzDodge?' ¡El Tzinacan se desvanece en la noche y esquiva!':''}`;B.curse=0;
   lunge(p.obj,b.obj.position,crit?.7:.45,()=>{});
   setTimeout(()=>{if(B!==bb)return;B.meter-=dmg;const pos=bp();flash(b.obj,crit?0x7ab0ff:0xffffff);doShake(crit?.22:.1,crit?420:240);
@@ -639,7 +640,7 @@ function closeBattle(){
 }
 
 /* ================= fin ================= */
-function score(p){const set=[1,2,3].every(l=>Object.keys(p.kills).some(k=>BEASTS[k]&&BEASTS[k].lvl===l&&p.kills[k]>0))?3:0,pen=(has(p,'penacho')?3:0)+(has(p,'cacao')?2:0)+(has(p,'anillo')?2:0),tro=p.trophies.hueso+Math.max(0,p.trophies.colmillo-1)*2+p.trophies.corazon*5+(p.trophies.pielsol||0)*6+(p.trophies.aguijon||0)*5+(p.trophies.ala||0)*5+(p.trophies.disco||0)*8,hun=huntPts(p);const raw=p.glory+set+pen+tro+hun-p.dignityLost*2,sunPen=G&&G.stageLost?Math.floor(Math.max(0,raw)/2):0;return{hun,glory:p.glory,set,pen,tro,dig:p.dignityLost*2,sunPen,total:raw-sunPen}}
+function score(p){const set=[1,2,3].every(l=>Object.keys(p.kills).some(k=>BEASTS[k]&&BEASTS[k].lvl===l&&p.kills[k]>0))?3:0,pen=(has(p,'penacho')?3:0)+(has(p,'cacao')?2:0)+(has(p,'anillo')?2:0),tro=p.trophies.hueso+p.trophies.colmillo*2+p.trophies.corazon*5+(p.trophies.pielsol||0)*6+(p.trophies.aguijon||0)*5+(p.trophies.ala||0)*5+(p.trophies.disco||0)*8,hun=huntPts(p);const raw=p.glory+set+pen+tro+hun-p.dignityLost*2,sunPen=G&&G.stageLost?Math.floor(Math.max(0,raw)/2):0;return{hun,glory:p.glory,set,pen,tro,dig:p.dignityLost*2,sunPen,total:raw-sunPen}}
 function endGame(){G.over=true;clearSave();const rank=G.players.slice().sort((a,b)=>score(b).total-score(a).total||b.items.length-a.items.length);
  $('endList').innerHTML=rank.map((p,i)=>{const s=score(p);return`<div class="row" style="margin:8px 0;align-items:flex-start"><span class="px gold" style="width:22px">${i+1}</span>${portrait(p.hero,40,p.hue)}<div style="flex:1"><div style="color:${p.color}">${p.name} · <b>${s.total}</b> puntos</div><div class="mut" style="font-size:17px">Gloria ${s.glory}${s.set?` · bestiario +${s.set}`:''}${s.pen?` · objetos +${s.pen}`:''}${s.tro?` · trofeos +${s.tro}`:''}${s.hun?` · cacerías +${s.hun}`:''}${s.dig?` · dignidad −${s.dig}`:''}${s.sunPen?` · <span style="color:#ff7a5a">ocaso eterno −${s.sunPen}</span>`:''}</div></div></div>`}).join('')+`<p class="mut" style="text-align:center">${rank[0].name} será recordado como el héroe del valle.</p>`;
  controls.autoRotate=true;$('ovEnd').classList.remove('hidden');update()}
@@ -723,7 +724,7 @@ function showRings(){rings.forEach(r=>scene.remove(r));rings.length=0;if(!G||G.o
  else if(G.pending){if(G.pending.type==='pickBeast')add(G.beasts.filter(b=>!BEASTS[b.kind].boss&&beastTargets(b).length).map(hexOf),ringMats.red);if(G.pending.type==='moveBeast')add(beastTargets(G.pending.b),ringMats.red);if(G.pending.type==='summon')add(lairs(BEASTS[G.pending.kind].lvl,false),ringMats.violet)}
  if(G.sel)add([G.sel],ringMats.sel)}
 
-window.UI={setBk:k=>{setup.bestias=k;renderSetup()},setX:k=>{setup.extras=k;renderSetup()},setA:k=>{setup.altars=k;renderSetup()},trade:(a,b)=>doTrade(a,b),setO:k=>{setup.omens=k;renderSetup()},setR:k=>{setup.respawn=k;renderSetup()},catalog:()=>showCatalog(),nextFight:()=>nextFight(),fleeNext:()=>fleeNext(),cont:()=>continueGame(),forget:()=>{clearSave();SAVED=null;$('contBox').classList.add('hidden')},huntGive:k=>huntGive(k),bUse:k=>{if(!B||B.busy)return;const p=B.p;if((p.used||{})[k])return;p.used=p.used||{};p.used[k]=true;const b0=p.hp;p.hp=Math.min(p.maxHp,p.hp+ITEMS[k].heal);floatText('+'+(p.hp-b0),p.obj.position.clone().add(new THREE.Vector3(0,1.4,0)),'#8ad06a');burst(p.obj.position.clone().add(new THREE.Vector3(0,.6,0)),24,0x8ad06a,1.2,{up:true});setBMsg(`Usás ${ITEMS[k].name} y recuperás ${p.hp-b0}.`);renderBattle()},board:()=>showBoard(),pick:(i,k)=>{setup.players[i].hero=k;renderSetup()},msgNext:()=>msgNext(),garra:()=>{if(!B||B.busy)return;const p=B.p;p.trophies.garra--;B.garra=2;floatText('+2',p.obj.position.clone().add(new THREE.Vector3(0,1.4,0)),'#c0a0ff');burst(p.obj.position.clone().add(new THREE.Vector3(0,.7,0)),20,0xc0a0ff,1.4,{up:true});setBMsg('Empuñás la garra estelar: +2 a tu próxima tirada.');renderBattle()},tap:k=>{if(!G||busy())return;const p=curP();
+window.UI={setBk:k=>{setup.bestias=k;renderSetup()},setX:k=>{setup.extras=k;renderSetup()},setA:k=>{setup.altars=k;renderSetup()},trade:(a,b)=>doTrade(a,b),setO:k=>{setup.omens=k;renderSetup()},setR:k=>{setup.respawn=k;renderSetup()},catalog:()=>showCatalog(),nextFight:()=>nextFight(),fleeNext:()=>fleeNext(),cont:()=>continueGame(),forget:()=>{clearSave();SAVED=null;$('contBox').classList.add('hidden')},huntGive:k=>huntGive(k),bUse:k=>{if(!B||B.busy)return;const p=B.p;if((p.used||{})[k])return;p.used=p.used||{};p.used[k]=true;const b0=p.hp;p.hp=Math.min(p.maxHp,p.hp+ITEMS[k].heal);floatText('+'+(p.hp-b0),p.obj.position.clone().add(new THREE.Vector3(0,1.4,0)),'#8ad06a');burst(p.obj.position.clone().add(new THREE.Vector3(0,.6,0)),24,0x8ad06a,1.2,{up:true});setBMsg(`Usás ${ITEMS[k].name} y recuperás ${p.hp-b0}.`);renderBattle()},board:()=>showBoard(),pick:(i,k)=>{setup.players[i].hero=k;renderSetup()},msgNext:()=>msgNext(),trophy:k=>{if(!B||B.busy||B.garra)return;const p=B.p;if(!(p.trophies[k]>0))return;p.trophies[k]--;B.garra=TRO_BON[k];B.troK=k;floatText('+'+B.garra,p.obj.position.clone().add(new THREE.Vector3(0,1.4,0)),'#c0a0ff');burst(p.obj.position.clone().add(new THREE.Vector3(0,.7,0)),20,0xc0a0ff,1.4,{up:true});setBMsg(`Usás ${TROPHY[k].name}: +${B.garra} a tu próxima tirada.`);renderBattle()},garra:()=>UI.trophy('garra'),tap:k=>{if(!G||busy())return;const p=curP();
   if(G.mode==='act'){if(k==='end')return startAcecho();const cd=canDo();if(!cd[k]){toast(`${LABEL[k]}: ${p.ap<1&&k!=='copal'&&k!=='agua'?'no te quedan PA':WHY[k]}`);return}return act(k)}
   if(k==='end'){G.pending=null;return endTurn()}
   if(k==='paw'){G.pending=G.pending&&G.pending.type!=='summon'?null:{type:'pickBeast'}}
