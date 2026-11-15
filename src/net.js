@@ -13,10 +13,11 @@ const netGetPath=(o,p)=>p.split('/').filter(Boolean).reduce((a,k)=>a==null?undef
 function netSetPath(o,p,v){const ks=p.split('/').filter(Boolean);let a=o;for(let i=0;i<ks.length-1;i++){if(typeof a[ks[i]]!=='object'||a[ks[i]]===null)a[ks[i]]={};a=a[ks[i]]}if(v===null||v===undefined)delete a[ks[ks.length-1]];else a[ks[ks.length-1]]=v}
 /* --- simulador local: varias pestañas del mismo navegador comparten la "base" --- */
 function netLocalAdapter(){const K='tonalli.netdb',bc=('BroadcastChannel' in window)?new BroadcastChannel('tonalli-net'):null,subs=[];
- const load=()=>{try{return JSON.parse(localStorage.getItem(K)||'{}')}catch(e){return{}}};
+ const PK='tonalli.netpres:';/* la presencia va en claves aparte: así los latidos de varias pestañas no pisan el estado */
+ const load=()=>{let db={};try{db=JSON.parse(localStorage.getItem(K)||'{}')}catch(e){}try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(PK)){const v=+localStorage.getItem(k);const p=k.slice(PK.length);if(netGetPath(db,p.split('/presence/')[0]))netSetPath(db,p,v)}}}catch(e){}return db};
  const fire=()=>{const db=load();subs.forEach(s=>s.cb(JSON.parse(JSON.stringify(netGetPath(db,s.p)??null))))};
  const strip=v=>{if(Array.isArray(v)){const o={};v.forEach((x,i)=>{const s=strip(x);if(s!==undefined)o[i]=s});return Object.keys(o).length?(Object.keys(o).length===v.length?Object.values(o):o):undefined}if(v&&typeof v==='object'){const o={};for(const k in v){const s=strip(v[k]);if(s!==undefined)o[k]=s}return Object.keys(o).length?o:undefined}return v===null?undefined:v};
- const save=db=>{db=strip(db)||{};localStorage.setItem(K,JSON.stringify(db));fire();bc&&bc.postMessage(1)};
+ const save=db=>{db=strip(db)||{};const rm=o=>{if(o&&typeof o==='object')for(const k in o){if(k==='presence')delete o[k];else rm(o[k])}};rm(db);localStorage.setItem(K,JSON.stringify(db));fire();bc&&bc.postMessage(1)};
  bc&&(bc.onmessage=()=>fire());addEventListener('storage',e=>{if(e.key===K)fire()});
  return{kind:'local',
   get:async p=>JSON.parse(JSON.stringify(netGetPath(load(),p)??null)),
@@ -24,7 +25,7 @@ function netLocalAdapter(){const K='tonalli.netdb',bc=('BroadcastChannel' in win
   update:async(p,o)=>{const db=load();for(const k in o)netSetPath(db,p+'/'+k,o[k]);save(db)},
   tx:async(p,fn)=>{const db=load();const cur=netGetPath(db,p)??null;const nv=fn(cur);if(nv===undefined)return{committed:false,val:cur};netSetPath(db,p,nv);save(db);return{committed:true,val:nv}},
   sub:(p,cb)=>{const s={p,cb};subs.push(s);setTimeout(()=>cb(JSON.parse(JSON.stringify(netGetPath(load(),p)??null))),0);return()=>subs.splice(subs.indexOf(s),1)},
-  presence:async(p)=>{const db=load();netSetPath(db,p,Date.now());save(db)},
+  presence:async(p)=>{localStorage.setItem(PK+p,String(Date.now()));fire();bc&&bc.postMessage(1)},
  }}
 /* --- Firebase Realtime Database (hosting propio) --- */
 async function netFirebaseAdapter(cfg){
@@ -89,7 +90,7 @@ function renderLobby(){const r=NET.room;if(!r)return;const host=r.host===NET.uid
    <div style="font-size:17px"><b>${HEROES[s.hero].name}</b> <span class="mut">· ${HEROES[s.hero].desc}</span></div></div>`}).join('');
  const btns=(id,k,style)=>{$(id).innerHTML=LB_OPTS[k].map(([v,l])=>`<button class="plain ${lbOpt(r,k)===v?'sel':''}" style="text-align:center;${style||''}" ${host?`onclick='UI.netOpt("${k}",${JSON.stringify(v)})'`:'disabled'}>${l}</button>`).join('')};
  btns('lbDays','days');btns('lbBk','bestias');btns('lbX','extras','font-size:17px;padding:7px 2px');btns('lbA','altars');btns('lbR','respawn');btns('lbO','omens','font-size:17px;padding:7px 2px');
- $('lbBoss').textContent=lbOpt(r,'bestias')==='aleatorias'?'Cada nivel sortea su bestia y el penúltimo día despierta un jefe al azar':'El penúltimo día despierta el Xiuhcóatl';
+ $('lbBoss').textContent=(lbOpt(r,'bestias')==='aleatorias'?'Cada nivel sortea su bestia':'Bestias clásicas')+(+lbOpt(r,'days')>=7?(lbOpt(r,'bestias')==='aleatorias'?' · el día 6 despierta un jefe al azar':' · el día 6 despierta el Xiuhcóatl'):' · sin jefe en partidas de 5 días');
  $('lbOptNote').textContent=host?'Elegí las opciones de la partida:':'Opciones de la partida (las elige el anfitrión):';
  $('lbStart').classList.toggle('hidden',!host);$('lbWait').classList.toggle('hidden',host);
  $('lbStart').disabled=L.length<2;$('lbStart').textContent=L.length<2?'Esperando jugadores…':`Empezar (${L.length} jugadores)`}

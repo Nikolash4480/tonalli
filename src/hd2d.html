@@ -881,11 +881,11 @@ function makeBillboard(key,scale=1,ringCol=0xff4a3a,hue=0){
  const frames=canv.map(c=>{const t=new THREE.CanvasTexture(c);t.magFilter=t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;t.colorSpace=THREE.SRGBColorSpace;return t});
  const c=canv[0];const u=.03*scale,w=c.width*u,h=c.height*u,ws=(c.width-2*(c._pad||0))*u;
  const geo=new THREE.PlaneGeometry(w,h);geo.translate(0,h/2-u,0);
- const mat=new THREE.MeshStandardMaterial({map:frames[0],alphaTest:.5,side:THREE.DoubleSide,roughness:1,emissive:0xffffff,emissiveMap:frames[0],emissiveIntensity:.22});
- const m=new THREE.Mesh(geo,mat);m.castShadow=true;m.userData.mat=mat;
- const shadow=new THREE.Mesh(new THREE.CircleGeometry(Math.min(ws,1.2)*.34,16),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.4,depthWrite:false}));shadow.rotation.x=-Math.PI/2;shadow.position.y=.012;
+ const mat=new THREE.MeshStandardMaterial({map:frames[0],alphaTest:.5,side:THREE.DoubleSide,roughness:1,emissive:0xffffff,emissiveMap:frames[0],emissiveIntensity:.22,transparent:true});
+ const m=new THREE.Mesh(geo,mat);m.castShadow=true;m.renderOrder=20;m.userData.mat=mat;
+ const shadow=new THREE.Mesh(new THREE.CircleGeometry(Math.min(ws,1.2)*.34,16),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.4,depthWrite:false}));shadow.rotation.x=-Math.PI/2;shadow.position.y=.012;shadow.renderOrder=15;
  const g=new THREE.Group();g.add(shadow);g.add(m);
- const rw=Math.min(ws,1.2);const ring=new THREE.Mesh(new THREE.RingGeometry(rw*.3,rw*.38,24),new THREE.MeshBasicMaterial({color:ringCol,transparent:true,opacity:.85,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.y=.016;g.add(ring);g.userData.ring=ring;g.userData.spr=m;g.userData.frames=frames;g.userData.faceLeft=['jaguar','aguila','sacerdotisa','pochteca'].includes(key)&&!c._hero;g.userData.heroArt=c._hero||null;g.userData.flip=1;g.userData.h=h;g.userData.idleN=c._idleN||0;g.userData.atkN=c._atkN||0;g.userData.walk=false;g.userData.off=Math.random()*3;scene.add(g);billboards.push(g);return g;
+ const rw=Math.min(ws,1.2);const ring=new THREE.Mesh(new THREE.RingGeometry(rw*.3,rw*.38,24),new THREE.MeshBasicMaterial({color:ringCol,transparent:true,opacity:.85,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.y=.016;ring.renderOrder=16;g.add(ring);g.userData.ring=ring;g.userData.spr=m;g.userData.frames=frames;g.userData.faceLeft=['jaguar','aguila','sacerdotisa','pochteca'].includes(key)&&!c._hero;g.userData.heroArt=c._hero||null;g.userData.flip=1;g.userData.h=h;g.userData.idleN=c._idleN||0;g.userData.atkN=c._atkN||0;g.userData.walk=false;g.userData.off=Math.random()*3;scene.add(g);billboards.push(g);return g;
 }
 const slotPos0=(h,slot)=>new THREE.Vector3(wx(h)+h.stand[0]+slot,h.top,wz(h)+h.stand[1]);
 const place=(obj,h,slot=0)=>{obj.position.copy(slotPos0(h,slot));obj.userData.hex=h};

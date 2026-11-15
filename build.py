@@ -4,7 +4,7 @@ import re,os,subprocess,json
 S='src/';rd=lambda f:open(S+f,encoding='utf-8').read()
 s=rd('hd2d.html');ui=rd('ui.html')
 spr=rd('sprites.js')+'\n'+rd('beastart.js')+'\n'+rd('heroart.js')
-game=rd('gamecode.js')+'\n'+rd('net.js')+'\n'+rd('help.js')
+game=rd('gamecode.js')+'\n'+rd('net.js')+'\n'+rd('help.js')+'\n'+rd('tips.js')
 script=s[s.index('<script type="module">'):s.index('</script>',s.index('<script type="module">'))+len('</script>')]
 a=script.index("/* sprites billboard */\n")+len("/* sprites billboard */\n");b=script.index("function makeBillboard(")
 script=script[:a]+rd('audio.js')+"\n"+spr+"\nconst billboards=[];\n"+script[b:]

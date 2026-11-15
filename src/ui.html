@@ -127,6 +127,7 @@ input{font-family:'VT323',monospace;font-size:20px;background:var(--ink);color:#
 .hex{border-left:3px solid #e3b04b;background:rgba(227,176,75,.08);padding:6px 10px;margin:8px 0;border-radius:0 6px 6px 0;font-size:17px}
 .hgrid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center;margin:6px 0}.hgrid3>div{background:rgba(0,0,0,.25);border-radius:6px;padding:6px}
 .hhex{display:inline-block;width:20px;height:22px;background:#e3b04b;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+#tip{position:fixed;z-index:80;max-width:260px;background:#1a1410;border:1px solid #e3b04b;border-radius:8px;padding:6px 9px;font-size:16px;color:#f0e6d0;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.5)}#tip b{color:#f0c040}.itm{display:inline-flex;padding:2px;border:1px solid rgba(227,176,75,.35);border-radius:5px;background:rgba(0,0,0,.25)}.itm.off{opacity:.35}[data-tip]{cursor:help}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
@@ -207,7 +208,7 @@ input{font-family:'VT323',monospace;font-size:20px;background:var(--ink);color:#
   <div class="sec">Extras</div><div class="g3" id="xBtns"></div>
   <div class="sec">Altares de Ehécatl</div><div class="g2" id="aBtns"></div>
   <div class="sec">Reaparición de bestias</div><div class="g2" id="rBtns"></div>
-  <div class="mut" id="bossNote" style="font-size:16px;text-align:center;margin:4px 0 8px">El penúltimo día despierta el Xiuhcóatl</div>
+  <div class="mut" id="bossNote" style="font-size:16px;text-align:center;margin:4px 0 8px">En partidas de 7 días, el día 6 despierta el Xiuhcóatl</div>
   <button class="pri plain" style="width:100%;margin-top:18px;padding:14px;font-size:26px;text-align:center" onclick="UI.start()" id="bStart">Comenzar</button>
 </div></div>
 
@@ -247,3 +248,4 @@ input{font-family:'VT323',monospace;font-size:20px;background:var(--ink);color:#
   <button class="pri" style="width:100%" onclick="document.getElementById('ovHelp').classList.add('hidden')">Entendido</button>
 </div></div>
 <div id="load" class="px">Cargando el valle…</div>
+<div id="tip" class="hidden"></div>
