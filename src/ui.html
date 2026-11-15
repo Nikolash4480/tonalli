@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<title>Tonalli · Senda del Jaguar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#0d0a12;font-family:'VT323',monospace;color:#f3ece0;font-size:20px;line-height:1.15}
+:root{--gold:#e3b04b;--jade:#3cc2a6;--terra:#d65a36;--line:#4a3d55;--ink:#120e18}
+canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.vig{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.45) 100%)}
+.win{position:relative;background:linear-gradient(180deg,rgba(38,29,48,.94) 0%,rgba(20,15,27,.95) 100%);border:1px solid rgba(227,176,75,.5);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06),inset 0 0 0 1px rgba(0,0,0,.35);padding:7px 9px;text-shadow:1px 1px 0 rgba(0,0,0,.6);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.ov>.win,#panel,#battle{padding-top:14px;padding-bottom:12px}
+.ov>.win::before,#panel::before,#battle::before{content:'';position:absolute;left:14px;right:14px;top:3px;height:7px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%228%22%20viewBox%3D%220%200%2024%208%22%3E%3Cpath%20d%3D%22M0%208V6h2V4h2V2h2V0h4v2h2v2h-2v2H8V4H6v4z%20M12%208V6h2V4h2V2h2V0h4v2h2v2h-2v2h-2V4h-2v4z%22%20fill%3D%22%23e3b04b%22/%3E%3C/svg%3E") repeat-x center/auto 7px;opacity:.55;pointer-events:none}
+.ov>.win::after,#panel::after,#battle::after{content:'';position:absolute;left:14px;right:14px;bottom:3px;height:7px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%228%22%20viewBox%3D%220%200%2024%208%22%3E%3Cpath%20transform%3D%22matrix%281%200%200%20-1%200%208%29%22%20d%3D%22M0%208V6h2V4h2V2h2V0h4v2h2v2h-2v2H8V4H6v4z%20M12%208V6h2V4h2V2h2V0h4v2h2v2h-2v2h-2V4h-2v4z%22%20fill%3D%22%23e3b04b%22/%3E%3C/svg%3E") repeat-x center/auto 7px;opacity:.35;pointer-events:none}
+.win .corner{display:none}
+.sec{font-family:'Press Start 2P',monospace;font-size:8px;letter-spacing:1px;color:#c9b48a;display:flex;align-items:center;gap:6px;margin:10px 0 5px}.sec::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(227,176,75,.45),transparent)}.sec::before{content:'';width:6px;height:6px;background:var(--jade);transform:rotate(45deg);flex:none}
+.px{font-family:'Press Start 2P',monospace;font-size:9px;line-height:1.6}
+.gold{color:#e9b84e}.mut{color:#b6a9c2}
+.hidden{display:none!important}
+button{font-family:'VT323',monospace;font-size:20px;color:#f3ece0;background:rgba(255,255,255,.035);border:1px solid var(--line);border-radius:7px;padding:6px 7px;cursor:pointer;text-align:left;text-shadow:1px 1px 0 rgba(0,0,0,.6);transition:border-color .15s,background .15s}
+@media (hover:hover){button:hover:not(:disabled){border-color:rgba(60,194,166,.7);background:rgba(60,194,166,.07)}}
+button::before{content:'▸ ';color:var(--gold)}button.plain::before{content:''}
+button:disabled{opacity:.35;cursor:default}button:active{transform:translateY(1px)}
+button.pri{background:linear-gradient(180deg,#eebd55,#c97a2e);border-color:#f7d98e;color:#24140a;text-shadow:0 1px 0 rgba(255,240,200,.45);box-shadow:inset 0 -2px 0 rgba(90,40,10,.35),0 2px 8px rgba(214,140,50,.25)}button.pri::before{color:#5a2a0c}
+@media (hover:hover){button.pri:hover:not(:disabled){background:linear-gradient(180deg,#f6ca66,#d4863a);border-color:#fff0c0}}
+button.sel{background:rgba(60,194,166,.16);border-color:var(--jade);color:#c8f5ea;box-shadow:inset 0 0 0 1px rgba(60,194,166,.35)}
+input{font-family:'VT323',monospace;font-size:20px;background:var(--ink);color:#f3ece0;border:1px solid var(--line);border-radius:7px;padding:4px 8px;width:100%;min-width:0;outline:none}input:focus{border-color:var(--jade)}
+.row{display:flex;align-items:center;gap:8px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:5px}.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.bar{height:9px;background:#120e18;border:1px solid #4a3d55;border-radius:2px;overflow:hidden}.bar>i{display:block;height:100%;background:linear-gradient(#ff7a5a,#c8402a)}
+.pip{display:inline-block;width:11px;height:11px;background:#e9b84e;border:2px solid #0a0820;border-radius:2px}.pip.off{background:#3a2f44}
+.dot{display:inline-block;width:11px;height:11px;border:2px solid #0a0820;border-radius:50%;vertical-align:-1px}
+.res{display:inline-flex;align-items:center;gap:2px;margin-right:8px;white-space:nowrap}
+.ico{width:17px;height:17px;image-rendering:pixelated;vertical-align:-3px}.spr{image-rendering:pixelated}
+.chip{display:inline-block;background:rgba(255,255,255,.1);border:1px solid #4a3d55;border-radius:4px;padding:0 5px;margin:2px 3px 2px 0}
+.log{font-size:18px;color:#b6a9c2;max-height:200px;overflow:auto}.log div{border-bottom:1px dashed rgba(227,176,75,.18);padding:2px 0}
+#hud{position:fixed;top:max(6px,env(safe-area-inset-top));left:6px;display:flex;gap:5px;align-items:center}
+#topInfo{flex:1;display:flex;justify-content:space-between;gap:6px;padding:6px 8px}
+#bottom{position:fixed;left:6px;width:min(460px,calc(100% - 12px));bottom:max(6px,env(safe-area-inset-bottom))}
+#hud{width:min(560px,calc(100% - 12px))}
+#acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ib{width:50px;height:50px;padding:0;display:flex;align-items:center;justify-content:center;position:relative}
+.ib img{width:30px;height:30px;image-rendering:pixelated}.ib.beast img{width:40px;height:auto}
+.ib.off{opacity:.3}.ib.endb{margin-left:auto}
+.ib .cost{position:absolute;right:3px;bottom:2px;font-family:'Press Start 2P',monospace;font-size:8px;color:#e9b84e;text-shadow:1px 1px 0 #000}
+@media (max-width:600px){.ib{width:42px;height:42px}.ib img{width:25px;height:25px}.ib.beast img{width:34px}#acts{gap:5px;margin-top:5px}#info{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:17px;margin-top:4px;padding-top:3px}#hint{font-size:17px;margin-bottom:2px}#panel{padding:5px 7px}.pip{width:9px;height:9px}.res{margin-right:5px;font-size:18px}.nm{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+.card{background:linear-gradient(180deg,#f8f0dc,#dccaa2);color:#2a1a10;text-shadow:none;border:2px solid #5a3a1e;border-radius:8px;box-shadow:inset 0 0 0 2px #c8a050,0 3px 0 rgba(0,0,0,.35);padding:7px 9px;margin:6px 0;font-size:18px}
+.card .res{color:#2a1a10}
+.cardart{width:54px;height:54px;flex:none;background:radial-gradient(circle,#fff6d8,#c8a050);border:2px solid #5a3a1e;border-radius:6px;display:flex;align-items:center;justify-content:center}.cardart img{width:36px;height:36px;image-rendering:pixelated}
+.hpick{flex:1;padding:3px;display:flex;justify-content:center;align-items:flex-end;height:56px}.hpick.sel{background:rgba(60,194,166,.16);border-color:var(--jade)}
+#banner{position:fixed;left:50%;top:64px;transform:translate(-50%,-30px);opacity:0;transition:transform .5s ease,opacity .5s ease;display:flex;gap:10px;align-items:center;pointer-events:none;z-index:6;min-width:240px}
+#banner.show{opacity:1;transform:translate(-50%,0)}
+#hint{text-align:center;color:#e9b84e;text-shadow:1px 1px 0 #000,0 0 6px #000;margin-bottom:4px;font-size:20px}
+#panel.mini #acts,#panel.mini #info{display:none}
+#info{font-size:18px;margin-top:5px;border-top:1px dashed rgba(227,176,75,.22);padding-top:4px}
+#toast{position:fixed;z-index:60;left:50%;top:150px;transform:translateX(-50%) translateY(-10px);opacity:0;transition:.25s;pointer-events:none;max-width:88%;text-align:center;font-size:19px}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#die{position:fixed;left:50%;top:70px;transform:translateX(-50%);width:84px;height:84px;filter:drop-shadow(0 4px 0 rgba(0,0,0,.4))}
+#die canvas{width:100%;height:100%;image-rendering:pixelated}
+#die.rolling canvas{animation:spin .26s linear infinite}#die.land canvas{animation:pop .3s ease-out}
+@keyframes spin{0%{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(.85)}100%{transform:rotate(360deg) scale(1)}}
+@keyframes pop{0%{transform:scale(1.5)}100%{transform:scale(1)}}
+.ov{position:fixed;inset:0;background:rgba(8,5,12,.6);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;padding:10px;z-index:9;overflow:auto}
+.ov>.win{width:100%;max-width:440px;max-height:92vh;overflow:auto}
+#load{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0b0816;z-index:20}
+
+#ovTitle{position:fixed;inset:0;z-index:12;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;cursor:pointer;text-align:center;padding:20px;background:radial-gradient(ellipse at center,rgba(13,10,18,.62) 0%,rgba(13,10,18,.8) 60%,rgba(8,5,12,.95) 100%);transition:opacity .6s ease}
+#tSnd.on{opacity:.55}
+#ovTitle.out{opacity:0;pointer-events:none}
+.emb{position:relative;width:min(210px,52vw);aspect-ratio:1;display:flex;align-items:center;justify-content:center}
+.emb .r{position:absolute;inset:0;border-radius:50%}
+.emb .r1{border:2px solid rgba(227,176,75,.75);box-shadow:0 0 30px rgba(227,176,75,.25),inset 0 0 24px rgba(227,176,75,.15)}
+.emb .r2{inset:9%;border-radius:50%;background:repeating-conic-gradient(rgba(227,176,75,.55) 0 4deg,transparent 4deg 15deg);-webkit-mask:radial-gradient(circle,transparent 62%,#000 63%,#000 71%,transparent 72%);mask:radial-gradient(circle,transparent 62%,#000 63%,#000 71%,transparent 72%);animation:rot 60s linear infinite}
+.emb .r3{inset:20%;border:1px solid rgba(60,194,166,.6);background:radial-gradient(circle,rgba(60,194,166,.18),rgba(20,15,27,.97) 70%)}
+.emb .r4{inset:3%;background:repeating-conic-gradient(rgba(214,90,54,.7) 0 2deg,transparent 2deg 30deg);-webkit-mask:radial-gradient(circle,transparent 90%,#000 91%,#000 96%,transparent 97%);mask:radial-gradient(circle,transparent 90%,#000 91%,#000 96%,transparent 97%);animation:rot 90s linear infinite reverse}
+#tEmb{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}.emb img{position:relative;width:60%!important;height:auto!important;filter:drop-shadow(0 4px 0 rgba(0,0,0,.5)) drop-shadow(0 0 14px rgba(227,176,75,.35))}
+@keyframes rot{to{transform:rotate(360deg)}}
+.ttl{font-family:'Press Start 2P',monospace;font-size:clamp(20px,6vw,40px);line-height:1.25;letter-spacing:2px;color:#f2c766;text-shadow:0 3px 0 #7a3c12,0 6px 0 rgba(0,0,0,.45),0 0 28px rgba(227,176,75,.35)}
+.ttl{font-size:clamp(34px,10vw,64px)!important;letter-spacing:6px!important}.tsec{display:block;font-size:.27em;letter-spacing:5px;color:#f3ece0;text-shadow:0 2px 0 #000;margin-top:12px}.ttl small{font-size:.2em!important;display:block;font-size:.42em;letter-spacing:6px;color:#5fe0c4;text-shadow:0 2px 0 #000;margin-bottom:10px}
+.tsub{color:#d9cbb4;font-size:20px;max-width:400px;text-shadow:0 2px 0 #000}
+@media (max-height:760px),(max-width:500px){.emb{width:min(160px,42vw)}.tsub{font-size:17px;max-width:320px}#ovTitle{gap:10px}}
+.tdiv{width:min(320px,70vw);height:9px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%228%22%20viewBox%3D%220%200%2024%208%22%3E%3Cpath%20d%3D%22M0%208V6h2V4h2V2h2V0h4v2h2v2h-2v2H8V4H6v4z%20M12%208V6h2V4h2V2h2V0h4v2h2v2h-2v2h-2V4h-2v4z%22%20fill%3D%22%23e3b04b%22/%3E%3C/svg%3E") repeat-x center/auto 9px;opacity:.7}
+.tgo{font-family:'Press Start 2P',monospace;font-size:10px;color:#f3ece0;letter-spacing:2px;margin-top:8px;animation:blink 1.6s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:.45}50%{opacity:1}}
+.tfoot{position:absolute;bottom:max(12px,env(safe-area-inset-bottom));font-size:16px;color:#8d809a}
+#bStart{position:sticky;bottom:0;z-index:2;box-shadow:0 -10px 16px 6px rgba(20,15,27,.9),inset 0 -2px 0 rgba(90,40,10,.35)}
+#ovSetup>.win{padding-bottom:10px}#ovSetup>.win::after{display:none}
+
+#tut{position:fixed;left:50%;top:calc(58px + env(safe-area-inset-top));transform:translateX(-50%);z-index:30;width:min(420px,calc(100vw - 16px));background:linear-gradient(180deg,rgba(24,18,34,.97),rgba(16,12,24,.97));border:2px solid #46a892;border-radius:10px;padding:10px 12px 10px;box-shadow:0 6px 24px rgba(0,0,0,.55);font-size:18px;line-height:1.25;color:#efe6d2}
+#tut.inb{top:calc(6px + env(safe-area-inset-top));font-size:16px;padding:7px 10px}
+#tut .tt{font-family:"Press Start 2P",monospace;font-size:9px;color:#ecc460;letter-spacing:1px;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
+#tut .tt span{color:#8fd8c8}
+#tut .tb{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+#tut .tb button{font-size:17px;padding:4px 10px}
+.tutGlow{animation:tutG 1s ease-in-out infinite;position:relative;z-index:31}
+@keyframes tutG{0%,100%{box-shadow:0 0 0 2px #46a892,0 0 10px 2px rgba(70,168,146,.6)}50%{box-shadow:0 0 0 3px #ecc460,0 0 18px 6px rgba(236,196,96,.75)}}
+
+#phFx{position:fixed;left:50%;top:calc(118px + env(safe-area-inset-top));transform:translateX(-50%);z-index:9;pointer-events:none;text-align:center;transition:opacity .5s}
+#phFx.out{opacity:0}
+#phFx canvas{width:240px;height:80px;image-rendering:pixelated;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5))}
+#phTxt{font-family:"Press Start 2P",monospace;font-size:12px;padding:6px 12px;background:rgba(14,10,20,.55);border-radius:6px;color:#ecc460;text-shadow:0 2px 0 #140e18,0 0 8px rgba(0,0,0,.7);letter-spacing:1px;margin-top:4px}
+
+.bTabs{display:flex;gap:4px;margin:8px 0 6px}
+.bTabs button{flex:1;font-size:16px;padding:4px 2px}
+.bTabs button.sel{border-color:#ecc460;color:#ecc460;background:rgba(236,196,96,.12)}
+.bCard{display:flex;gap:10px;padding:9px;margin:7px 0;border:1px solid rgba(227,176,75,.28);border-radius:8px;background:rgba(0,0,0,.22)}
+.bCard.soon{opacity:.85;border-style:dashed}
+.bImg{width:92px;min-width:92px;height:92px;display:flex;align-items:flex-end;justify-content:center;background:radial-gradient(ellipse at 50% 85%,rgba(236,196,96,.16),transparent 70%);border-radius:6px}
+.bImg img{height:84px;width:auto;max-width:92px;object-fit:contain;object-position:50% 100%;image-rendering:pixelated}
+.bInfo{flex:1;min-width:0;font-size:17px;line-height:1.22}
+.bName{font-family:"Press Start 2P",monospace;font-size:10px;color:#ecc460;line-height:1.4}
+.bChips{margin:3px 0 4px;display:flex;flex-wrap:wrap;gap:4px}
+.bChip{font-size:14px;padding:0 6px;border-radius:9px;border:1px solid rgba(255,255,255,.2)}
+.bLore{font-style:italic;color:#c9bfae;margin:2px 0 5px}
+.bStats{display:flex;flex-wrap:wrap;gap:4px 6px;margin:2px 0 4px}
+.bStats span{background:rgba(255,255,255,.06);border-radius:5px;padding:0 6px;font-size:15px;white-space:nowrap}
+.bEff b{color:#d0a0ff}
+
+.setupLinks{margin:6px 0 2px}.setupLinks button{text-align:center;font-size:16px;padding:6px 2px}
+#ovBest>.win::before,#ovBest>.win::after,#ovHelp>.win::after,#ovSetup>.win::before{display:none}
+.mbig{display:block;width:100%;text-align:center;padding:12px 10px;margin:6px 0}.mbig b{display:block;font-size:24px}.mbig small{display:block;font-size:15px;opacity:.75;margin-top:2px}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="vig"></div>
+<div id="hud" class="hidden">
+  <div class="win" id="topInfo"></div>
+  <button class="win plain" style="padding:4px 6px" onclick="UI.board()" aria-label="Cartas de las ciudades" title="Cartas de las ciudades"><img id="boardIco" class="spr" style="width:22px;height:22px;display:block" alt=""></button>
+  <button class="win plain" id="bSnd" style="padding:6px 8px" onclick="UI.snd()" aria-label="Sonido">🔊</button>
+  <button class="win plain" style="padding:6px 8px" onclick="UI.details()" aria-label="Héroe y crónica">☰</button>
+</div>
+<div id="toast" class="win"></div>
+<div id="banner" class="win"></div>
+<div id="die" class="hidden"><canvas id="dieC" width="28" height="28"></canvas></div>
+<div id="bottom">
+  <div id="hint"></div>
+  <div id="panel" class="win hidden">
+    <div class="row" style="align-items:flex-start"><div id="me" style="flex:1;min-width:0"></div><button class="plain" id="bMini" style="padding:2px 8px" onclick="UI.togglePanel()" aria-label="Minimizar panel">▾</button></div>
+    <div id="acts"></div>
+    <div id="info"></div>
+  </div>
+  <div id="battle" class="win hidden">
+    <div id="bBars"></div>
+    <div id="bMsg" style="min-height:44px;margin:6px 0;font-size:19px"></div>
+    <div class="g2" id="bCmds"></div>
+  </div>
+</div>
+
+<div id="phFx" class="hidden"><div id="phTxt"></div></div>
+<div id="tut" class="hidden"><div class="tt"><b id="tutT"></b><span id="tutN"></span></div><div id="tutX"></div><div class="tb"><button class="plain" id="tutSkip" onclick="UI.tutSkip()">Salir</button><button class="pri plain" id="tutNext" onclick="UI.tutNext()">Siguiente</button></div></div>
+<div id="ovTitle" onclick="UI.title()">
+  <button id="tSnd" class="plain" onclick="event.stopPropagation();UI.titleSnd()" style="position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;padding:6px 10px;font-size:20px;border-color:rgba(227,176,75,.5)" aria-label="Sonido">🔊</button>
+  <div class="emb"><div class="r r4"></div><div class="r r1"></div><div class="r r2"></div><div class="r r3"></div><span id="tEmb"></span></div>
+  <div class="ttl"><small>EL VALLE DEL QUINTO SOL</small>TONALLI<span class="tsec">SENDA DEL JAGUAR</span></div>
+  <div class="tdiv"></div>
+  <div class="tsub">Cazá bestias, cumplí los pedidos de las ciudades y enfrentá al jefe del valle antes de que termine la última noche.</div>
+  <div class="tgo">TOCÁ PARA EMPEZAR</div>
+  <div class="tfoot">1 a 4 jugadores · local u online</div>
+</div>
+<div class="ov hidden" id="ovMenu"><div class="win" style="max-width:420px">
+  <div class="px gold" style="text-align:center;font-size:14px;margin:4px 0 4px;letter-spacing:4px">TONALLI</div><div class="px mut" style="text-align:center;font-size:7px;letter-spacing:2px;margin-bottom:14px">SENDA DEL JAGUAR</div>
+  <button id="mCont" class="pri plain hidden" style="width:100%;padding:12px;font-size:24px;text-align:center;margin-bottom:4px" onclick="UI.menuCont()">Continuar partida</button><div class="mut hidden" id="mContInfo" style="text-align:center;font-size:16px;margin-bottom:10px"></div>
+  <button class="pri plain mbig" onclick="UI.menuLocal()"><b>Juego local</b><small>1 a 4 jugadores en este dispositivo</small></button>
+  <button class="plain mbig" style="border-color:rgba(70,168,146,.8)" onclick="UI.menuOnline()"><b>Juego online</b><small>Jugá con amigos, cada uno desde su dispositivo</small></button>
+  <div class="tdiv" style="margin:16px auto 12px"></div>
+  <div class="g3"><button class="plain" onclick="UI.help()">Cómo se juega</button><button class="plain" style="border-color:rgba(70,168,146,.7)" onclick="UI.tutorial()">Tutorial</button><button class="plain" style="border-color:rgba(208,160,255,.6)" onclick="UI.bestiary()">Bestiario</button></div>
+</div></div>
+<div class="ov hidden" id="ovOnline"><div class="win" style="max-width:420px">
+  <div class="px gold" style="text-align:center;font-size:11px;letter-spacing:3px;margin:4px 0 12px">JUEGO ONLINE</div>
+  <div class="sec">Tu nombre</div><input id="onName" maxlength="14" placeholder="Jugador" style="width:100%;box-sizing:border-box;font:22px inherit;background:#1a1410;color:#f0e6d0;border:1px solid #6a5434;border-radius:8px;padding:8px">
+  <button class="pri plain mbig" style="margin-top:12px" onclick="UI.netCreate()"><b>Crear partida</b><small>Te damos un código para tus amigos</small></button>
+  <div class="sec">Unirse con código</div>
+  <div style="display:flex;gap:6px"><input id="onCode" maxlength="4" placeholder="ABCD" autocapitalize="characters" style="flex:1;min-width:0;text-transform:uppercase;letter-spacing:6px;text-align:center;font:22px inherit;background:#1a1410;color:#f0e6d0;border:1px solid #6a5434;border-radius:8px;padding:8px"><button class="plain" style="padding:8px 16px" onclick="UI.netJoin()">Unirse</button></div>
+  <button class="plain hidden" id="onLast" style="width:100%;margin-top:8px"></button>
+  <button class="plain" style="width:100%;margin-top:12px" onclick="UI.menuBack()">← Volver al menú</button>
+</div></div>
+<div class="ov hidden" id="ovLobby"><div class="win" style="max-width:440px">
+  <div class="px gold" style="text-align:center;font-size:10px;letter-spacing:3px;margin:4px 0 6px">SALA DE ESPERA</div>
+  <div class="mut" style="text-align:center;font-size:16px">Código de la partida</div>
+  <div id="lbCode" class="gold" style="text-align:center;font-size:46px;letter-spacing:10px;margin:2px 0 6px">----</div>
+  <button class="plain" style="width:100%" onclick="UI.netShare()">Invitar amigos</button>
+  <div class="sec">Jugadores</div><div id="lbSeats"></div>
+  <div class="sec">Duración</div><div class="g2" id="lbDays"></div>
+  <button class="pri plain mbig" id="lbStart" style="margin-top:12px" onclick="UI.netStart()">Empezar</button>
+  <div class="mut hidden" id="lbWait" style="text-align:center;margin:12px 0">Esperando que el anfitrión empiece la partida…</div>
+  <button class="plain" style="width:100%;margin-top:6px" onclick="UI.netLeave()">Salir de la sala</button>
+</div></div>
+<div class="ov hidden" id="ovSetup"><div class="win">
+  <div class="px gold" style="text-align:center;font-size:12px;margin:2px 0 4px;letter-spacing:3px">TONALLI</div><div class="px mut" style="text-align:center;font-size:7px;letter-spacing:2px;margin-bottom:4px">SENDA DEL JAGUAR</div><div class="mut" style="text-align:center;font-size:16px;margin-bottom:4px">Preparar la partida</div>
+  <div id="contBox" class="hidden" style="margin-bottom:10px"><button class="pri plain" style="width:100%;padding:12px;font-size:24px;text-align:center" onclick="UI.cont()">Continuar partida</button><div class="mut" id="contInfo" style="text-align:center;font-size:17px;margin:4px 0"></div><button class="plain" style="width:100%;text-align:center;font-size:17px;padding:4px" onclick="UI.forget()">Borrar partida guardada</button><div class="px" style="margin:10px 0 0;text-align:center">o empezá una nueva</div></div>
+  <button class="plain" style="width:100%;font-size:17px;padding:4px;margin-bottom:4px" onclick="UI.menuBack()">← Volver al menú</button>
+  <div class="sec">Estilo del mapa</div><div class="g2" id="gfxBtns"></div><div class="sec">Jugadores</div><div class="g3" id="nBtns"></div>
+  <div id="pRows" style="margin-top:8px"></div>
+  <div class="sec">Duración</div><div class="g2" id="dBtns"></div>
+  <div class="sec">Presagios</div><div class="g3" id="oBtns"></div>
+  <div class="sec">Bestias</div><div class="g2" id="bkBtns"></div>
+  <div class="sec">Extras</div><div class="g3" id="xBtns"></div>
+  <div class="sec">Altares de Ehécatl</div><div class="g2" id="aBtns"></div>
+  <div class="sec">Reaparición de bestias</div><div class="g2" id="rBtns"></div>
+  <div class="mut" id="bossNote" style="font-size:16px;text-align:center;margin:4px 0 8px">El penúltimo día despierta el Xiuhcóatl</div>
+  <button class="pri plain" style="width:100%;margin-top:18px;padding:14px;font-size:26px;text-align:center" onclick="UI.start()" id="bStart">Comenzar</button>
+</div></div>
+
+<div class="ov hidden" id="ovTurn" style="background:rgba(6,4,14,.45)"><div class="win" style="text-align:center;max-width:340px">
+  <div class="px mut" id="tPhase"></div><div id="tSpr" style="margin:10px 0"></div>
+  <div class="px" id="tName" style="font-size:12px"></div><div class="mut" id="tInfo" style="margin:6px 0 10px"></div>
+  <button class="pri" style="width:100%" onclick="UI.closeTurn()">Comenzar turno</button>
+</div></div>
+
+<div class="ov hidden" id="ovMsg"><div class="win" style="text-align:center;max-width:340px">
+  <div class="px gold" id="mTitle"></div><div id="mBody" style="margin:10px 0"></div>
+  <button class="pri" style="width:100%" onclick="UI.msgNext()">Continuar</button>
+</div></div>
+
+<div class="ov hidden" id="ovDetails"><div class="win"><div id="dBody"></div>
+  <div class="sec">Configuración</div><label class="row" style="margin:4px 0;font-size:18px">Música <input type="range" min="0" max="1" step=".05" id="vMus" style="flex:1" oninput="UI.vol('music',this.value)"></label><label class="row" style="margin:4px 0 8px;font-size:18px">Efectos <input type="range" min="0" max="1" step=".05" id="vSfx" style="flex:1" oninput="UI.vol('sfx',this.value)"></label><button id="bQ" style="width:100%" onclick="UI.quality()">Calidad: alta</button><button id="bBlur" style="width:100%;margin-top:5px" onclick="UI.blur()">Desenfoque</button><button id="bGfx" style="width:100%;margin-top:5px" onclick="UI.gfx()">Mapa: tablero de mesa</button>
+  <div class="g2" style="margin-top:10px"><button onclick="UI.help()">Cómo se juega</button><button onclick="UI.bestiary()">Bestiario</button></div><button class="pri" style="width:100%;margin-top:6px" onclick="document.getElementById('ovDetails').classList.add('hidden')">Cerrar</button>
+</div></div>
+
+<div class="ov hidden" id="ovBoard"><div class="win"><div class="px gold" style="margin-bottom:8px">Cartas de las ciudades</div><div id="boardBody"></div>
+  <button class="pri" style="width:100%;margin-top:6px" onclick="document.getElementById('ovBoard').classList.add('hidden')">Cerrar</button></div></div>
+
+<div class="ov hidden" id="ovEnd"><div class="win">
+  <div class="px gold" style="text-align:center;font-size:12px">Fin de la partida</div><div id="endList" style="margin:10px 0"></div>
+  <button class="pri" style="width:100%" onclick="location.reload()">Jugar de nuevo</button>
+</div></div>
+
+<div class="ov hidden" id="ovBest" style="z-index:13"><div class="win" style="max-width:460px">
+  <div class="row" style="justify-content:space-between;align-items:center"><div class="px gold">Bestiario</div><button class="plain" style="font-size:17px;padding:2px 10px" onclick="document.getElementById('ovBest').classList.add('hidden')">Cerrar</button></div>
+  <div class="mut" style="font-size:15px;margin-top:4px">La <b style="color:#d0a0ff">habilidad de bestia</b> se activa cuando en combate sale la cara de bestia del dado.</div>
+  <div id="bTabs" class="bTabs"></div>
+  <div id="bList"></div>
+</div></div>
+<div class="ov hidden" id="ovHelp" style="z-index:12"><div class="win">
+  <div class="px gold" style="margin-bottom:6px">Cómo se juega</div>
+  <div style="font-size:18px">
+  <p>Cada jugador es un héroe del valle. Gana quien termina con más <b>gloria</b>. Arrastrá para girar la cámara y pellizcá para hacer zoom.</p>
+  <p><b>Calendario.</b> 5 o 7 días. Mañana 6 PA, tarde 6 PA, noche 4 PA. Todos juegan un turno por fase.</p>
+  <p><b>Acciones.</b> Moverse a un hexágono vecino (1 PA; subir a un volcán, 2), recolectar (1 PA; minar piedra u obsidiana, 2), luchar (1), entregar una carta o descansar en una ciudad (1). El agua no se cruza (salvo con canoa). Si entrás en un hexágono con una bestia, te embosca y empieza el combate (salvo con la Máscara de Mictlán o si la bestia está en Letargo).</p>
+  <p><b>Recursos.</b> Milpa: maíz. Selva: madera. Cerro: piedra. Volcán: obsidiana. Cada hexágono tiene 2 cargas (los cubitos blancos) que vuelven al amanecer. No se recolecta con una bestia al lado.</p>
+  <p><b>Cartas de ciudad.</b> Cada ciudad (también el Teocalli Mayor) tiene un mazo de 5 cartas con objetos exclusivos. La carta visible pide recursos; si la cumplís ganás gloria y su objeto. La siguiente carta aparece al amanecer. Tocá el ícono de tablero arriba para ver todas.</p>
+  <p><b>Combate.</b> Empezar es gratis; cada tirada cuesta 1 PA (repetir no). Si te quedás sin PA te retirás y la bestia conserva sus heridas hasta el amanecer. Huir cuesta 1 PA (si no tenés, 1 de vida, sin bajar de 1). El dado resta 2 a 5 a la fuerza de la bestia; el <span style="color:#9ac0ff">golpe azul</span> es un crítico (4 de daño a las de nivel 1 y 2 y a los jefes, 6 a las de nivel 3); la <span style="color:#ff7a5a">cara de bestia</span> la cura 2 y activa su <b>habilidad de bestia</b>. Si sigue en pie, te ataca. Podés huir.</p>
+  <p><b>Bestias.</b> Fácil: Calaca del Mictlán (fuerza 3, roba un recurso al empezar el combate; deja un Hueso del Mictlán, +1 de gloria al final). Intermedia: Tzitzimitl (fuerza 7, eclipse: −2 a tu próxima tirada; deja una Garra estelar, +2 a una tirada). Difícil: Tlaltecuhtli (fuerza 6, ataque doble; deja un Colmillo, +1 a todas tus tiradas).</p>
+  <p><b>Jefe.</b> Al amanecer del penúltimo día despierta el Xiuhcóatl, la serpiente de fuego: fuerza 11, ataque 2 y Llamarada (ataque triple). No se lo puede azuzar ni vuelve si lo vencés. Si sigue vivo al amanecer del último día, recibe la Furia del Quinto Sol (+3 fuerza, +1 ataque). Da 8 de gloria y su Corazón (+5 al final).</p>
+  <p><b>Presagios.</b> Se eligen al empezar (apagados, ocasionales 35 % o frecuentes 65 % por día). Desde el día 2, un amanecer puede traer un presagio: Lluvias de Tláloc (maíz doble), Eclipse (todo el día es noche, bestias +1), Fiesta del Sol (cartas +1 gloria), Migración (las bestias se mueven), Viento de Ehécatl (1 movimiento gratis), Erupción (obsidiana doble, subir quita 1 de vida) o Niebla del Mictlán (sin emboscadas).</p>
+  <p><b>Guardado.</b> La partida se guarda sola al inicio de cada turno en este navegador.</p>
+  <p><b>Mejoras de las bestias.</b> Los amaneceres de los días 3 y 5 (en partidas de 5 días, solo el 3) todas las bestias reciben una mejora al azar, y las que reaparecen llegan con el mismo nivel. El último día solo se enfurece el Xiuhcóatl. Las cartas posibles: Piel de obsidiana (+2 fuerza), Colmillos afilados (+1 ataque), Sed de sangre (se cura más), Coraza de jade (−1 daño por tirada) o Furia nocturna (+1 ataque de noche) o Letargo (queda pasiva). Se acumulan, y cada mejora suma +1 de gloria al vencerla.</p>
+  <p><b>Dignidad.</b> Si caés, tu turno termina (no hay acecho), volvés al Teocalli Mayor con la vida llena y perdés 1 de dignidad: 1 PA menos por fase y 2 puntos menos al final.</p>
+  <p><b>Acecho.</b> Al terminar tu turno tenés furia (más cuanto más herido estás). Mover una bestia cuesta 1: la calaca salta hasta 2 casillas y te roba al caer, el Tzitzimitl vuela hasta 3 (también sobre el agua) y el Tlaltecuhtli avanza 1. Invocar, 2 a 4. Si cae sobre un héroe, le quita 1 de vida (el Chimalli lo bloquea). Varias bestias pueden compartir hexágono. Las ciudades y el Barrio del Teocalli tienen guardias: las bestias no entran.</p>
+  <p><b>Guaridas.</b> Cada bestia tiene sus guaridas: tzompantli de cráneos con velas naranjas (calaca), arco de obsidiana con ojo estelar violeta (Tzitzimitl) y fauces de la tierra con pozo rojo (Tlaltecuhtli). Hay 2 guaridas por tipo, alejadas entre sí. Al empezar, las bestias se reparten cerca de ellas; después reaparecen al amanecer en sus guaridas (las eligen los jugadores por turnos rotativos, para presionar a sus rivales, o al azar si la reaparición es automática) o se invocan ahí. Arrancan siempre 5 calacas, 3 tzitzimime y 2 tlaltecuhtlis (máximo 6, 4 y 3).</p>
+  <p><b>Cacerías.</b> Hay una por bestia. En el Teocalli Mayor elegís a qué cacería entregar (1 PA cada entrega); cada una acepta solo los trofeos de su bestia: calaca 7 huesos (1·2·3·4·6·8·10 pts), Tzitzimitl 5 garras (1·3·5·8·12) y Tlaltecuhtli 3 colmillos (4·8·13). El primero en completarla se corona campeón y la cierra; los demás conservan sus puntos. Ojo: el trofeo entregado pierde su efecto.</p>
+  <p><b>Opciones.</b> Altares de Ehécatl: viajás entre altares por 2 PA (gratis con Viento de Ehécatl). Quinta ciudad: juegan las 4 ciudades temáticas. Mercado: en Xalpan cambiás 2 recursos iguales por 1 a elección (1 PA).</p>
+  <p><b>Puntaje.</b> Gloria, cacerías, +3 por vencer a los tres tipos de bestia, huesos y colmillos extra, penacho, −2 por dignidad perdida.</p>
+  </div>
+  <button class="pri" style="width:100%" onclick="document.getElementById('ovHelp').classList.add('hidden')">Entendido</button>
+</div></div>
+<div id="load" class="px">Cargando el valle…</div>
