@@ -78,17 +78,26 @@ function netEnterLobby(){$('ovOnline').classList.add('hidden');$('ovLobby').clas
   if(r.status==='playing'&&netSnap(r)&&!NET.on){return netBootInto(r)}renderLobby()});
  clearInterval(NET.lt);NET.lt=setInterval(()=>NET.room&&!NET.on&&renderLobby(),5000)}
 function seatList(r){return Object.entries((r&&r.seats)||{}).sort((a,b)=>a[1].t-b[1].t)}
-function renderLobby(){const r=NET.room;if(!r)return;const host=r.host===NET.uid,alive=netAlive(r),L=seatList(r);
+const LB_OPTS={days:[[5,'5 días'],[7,'7 días']],bestias:[['clasicas','Clásicas'],['aleatorias','Aleatorias']],extras:[['ninguno','Ninguno'],['quinta','Quinta ciudad'],['mercado','Mercado']],altars:[[false,'Sin altares'],[true,'Con altares']],respawn:[['elegida','La elige el jugador'],['auto','Automática']],omens:[['no','Apagados'],['ocasionales','Ocasionales'],['frecuentes','Frecuentes']]};
+const LB_DEF={days:7,bestias:'clasicas',extras:'ninguno',altars:false,respawn:'elegida',omens:'ocasionales'};
+const lbOpt=(r,k)=>{const o=(r&&r.opts)||{};return o[k]!==undefined?o[k]:(k==='days'&&r&&r.days)||LB_DEF[k]};
+function renderLobby(){const r=NET.room;if(!r)return;const host=r.host===NET.uid,alive=netAlive(r),L=seatList(r);const list=L.map(x=>({hero:x[1].hero}));
  $('lbCode').textContent=r.code;
- $('lbSeats').innerHTML=L.map(([uid,s],i)=>{const me=uid===NET.uid;const list=L.map(x=>({hero:x[1].hero}));
-  return`<div class="row" style="margin:6px 0;gap:8px"><span class="dot" style="background:${COLORS[i]}"></span>${portrait(s.hero,34,heroHue(list,i))}<div style="flex:1;min-width:0"><div>${esc(s.name)}${me?' <span class="mut">(vos)</span>':''}${uid===r.host?' <span class="gold">· anfitrión</span>':''}</div><div class="mut" style="font-size:15px">${alive(uid)?'● conectado':'○ sin conexión'} · ${HEROES[s.hero].name}</div></div>${me?`<select onchange="UI.netHero(this.value)" style="font:16px inherit;background:#1a1410;color:#f0e6d0;border:1px solid #6a5434;border-radius:6px;padding:4px">${HK.map(k=>`<option value="${k}" ${k===s.hero?'selected':''}>${HEROES[k].name}</option>`).join('')}</select>`:''}</div>`}).join('');
- $('lbDays').innerHTML=[[5,'5 días'],[7,'7 días']].map(([n,l])=>`<button class="plain ${r.days===n?'sel':''}" ${host?`onclick="UI.netDays(${n})"`:'disabled'}>${l}</button>`).join('');
+ $('lbSeats').innerHTML=L.map(([uid,s],i)=>{const me=uid===NET.uid;
+  return`<div style="margin-bottom:10px"><div class="row" style="gap:8px"><span class="dot" style="background:${COLORS[i]}"></span>${portrait(s.hero,34,heroHue(list,i))}<div style="flex:1;min-width:0"><div>${esc(s.name)}${me?' <span class="mut">(vos)</span>':''}${uid===r.host?' <span class="gold">· anfitrión</span>':''}</div><div class="mut" style="font-size:15px">${alive(uid)?'● conectado':'○ sin conexión'}</div></div></div>
+   ${me?`<div class="row" style="gap:4px;margin-top:4px">${HK.map(k=>`<button class="plain hpick ${s.hero===k?'sel':''}" onclick="UI.netHero('${k}')" aria-label="${HEROES[k].name}" title="${HEROES[k].name}">${portrait(k,40)}</button>`).join('')}</div>`:''}
+   <div style="font-size:17px"><b>${HEROES[s.hero].name}</b> <span class="mut">· ${HEROES[s.hero].desc}</span></div></div>`}).join('');
+ const btns=(id,k,style)=>{$(id).innerHTML=LB_OPTS[k].map(([v,l])=>`<button class="plain ${lbOpt(r,k)===v?'sel':''}" style="text-align:center;${style||''}" ${host?`onclick='UI.netOpt("${k}",${JSON.stringify(v)})'`:'disabled'}>${l}</button>`).join('')};
+ btns('lbDays','days');btns('lbBk','bestias');btns('lbX','extras','font-size:17px;padding:7px 2px');btns('lbA','altars');btns('lbR','respawn');btns('lbO','omens','font-size:17px;padding:7px 2px');
+ $('lbBoss').textContent=lbOpt(r,'bestias')==='aleatorias'?'Cada nivel sortea su bestia y el penúltimo día despierta un jefe al azar':'El penúltimo día despierta el Xiuhcóatl';
+ $('lbOptNote').textContent=host?'Elegí las opciones de la partida:':'Opciones de la partida (las elige el anfitrión):';
  $('lbStart').classList.toggle('hidden',!host);$('lbWait').classList.toggle('hidden',host);
  $('lbStart').disabled=L.length<2;$('lbStart').textContent=L.length<2?'Esperando jugadores…':`Empezar (${L.length} jugadores)`}
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 async function netStart(){const r=NET.room;if(!r||r.host!==NET.uid)return;const L=seatList(r);if(L.length<2)return;
  NET.order=L.map(x=>x[0]);await NET.db.update(`rooms/${NET.code}`,{order:NET.order,status:'starting'});
- setup.n=L.length;setup.days=r.days||7;setup.extras=EXTRAS;L.forEach(([uid,s],i)=>{setup.players[i]={name:s.name,hero:s.hero}});
+ setup.n=L.length;['days','bestias','extras','altars','respawn','omens'].forEach(k=>setup[k]=lbOpt(r,k));L.forEach(([uid,s],i)=>{setup.players[i]={name:s.name,hero:s.hero}});
+ if(setup.extras!==EXTRAS){try{sessionStorage.setItem('sendaJaguar.nethost',JSON.stringify({code:NET.code,uid:NET.uid,order:NET.order}))}catch(e){}}
  NET.on=true;NET.seat=0;NET.driving=true;NET.rev=0;netStash(null);
  $('ovLobby').classList.add('hidden');clearInterval(NET.lt);
  NET.unsub&&NET.unsub();netListen();startGame()}
@@ -116,7 +125,7 @@ function persistSave(d){
  if(!NET.on){localStorage.setItem(SAVE_KEY,JSON.stringify(d));return}
  netStash(d);if(NET.applying||!NET.driving)return;
  NET.rev++;const over=NET.final;NET.driving=d.cur===NET.seat&&!over;
- const up={sj:JSON.stringify(d),snap:null,rev:NET.rev,by:NET.uid,status:over?'over':'playing',cur:d.cur,at:Date.now()};NET.db.update(`rooms/${NET.code}`,up).catch(e=>{toast('No se pudo enviar el turno, reintentando…');setTimeout(()=>NET.db.update(`rooms/${NET.code}`,up),3000)});
+ const up={sj:JSON.stringify(d),snap:null,rev:NET.rev,by:NET.uid,status:over?'over':'playing',cur:d.cur,at:Date.now()};(NET.db?Promise.resolve():NET.ready).then(()=>NET.db.update(`rooms/${NET.code}`,up)).catch(e=>{toast('No se pudo enviar el turno, reintentando…');setTimeout(()=>NET.db.update(`rooms/${NET.code}`,up),3000)});
  netHud()}
 const myTurn=()=>!NET.on||NET.driving;
 function netHud(){let el=$('netHud');if(!NET.on){el&&el.remove();return}
@@ -148,7 +157,8 @@ function netHud(){let el=$('netHud');if(!NET.on){el&&el.remove();return}
 Object.assign(UI,{
  netCreate:()=>netCreate(),netJoin:()=>netJoin(),netLeave:()=>netLeave(),netStart:()=>netStart(),
  netHero:k=>NET.db&&NET.db.update(`rooms/${NET.code}/seats/${NET.uid}`,{hero:k}),
- netDays:n=>NET.db&&NET.room&&NET.room.host===NET.uid&&NET.db.update(`rooms/${NET.code}`,{days:n}),
+ netDays:n=>UI.netOpt('days',n),
+ netOpt:(k,v)=>NET.db&&NET.room&&NET.room.host===NET.uid&&NET.db.update(`rooms/${NET.code}/opts`,{[k]:v}),
  netShare:()=>{const t=`¡Jugá Tonalli conmigo! Entrá a ${location.origin+location.pathname} → Juego online → Unirse con el código ${NET.code}`;if(navigator.share)navigator.share({text:t}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(t);toast('Invitación copiada')}},
 });
 {const _mo=UI.menuOnline;UI.menuOnline=function(){const r=_mo.apply(this,arguments);$('onName').value=netName()||'';let last=null;try{last=localStorage.getItem('sendaJaguar.netlast')}catch(e){}$('onLast').classList.toggle('hidden',!last);if(last)$('onLast').textContent='Volver a la sala '+last;$('onLast').onclick=()=>netJoin(last);return r}}
@@ -163,3 +173,7 @@ UI.toMenu=()=>{if(B){toast('Terminá el combate antes de salir');return}
  try{sessionStorage.setItem('sendaJaguar.toMenu','1')}catch(e){}location.reload()};
 ;(()=>{let m=false;try{m=sessionStorage.getItem('sendaJaguar.toMenu')==='1';sessionStorage.removeItem('sendaJaguar.toMenu')}catch(e){}if(m)setTimeout(()=>{try{$('ovTitle').classList.add('hidden');UI.menuShow()}catch(e){}},300)})();
 {const _sd=showDetails;showDetails=function(){const r=_sd.apply(this,arguments);const b=$('bMenu');if(b){b.classList.toggle('hidden',!!(G&&G.tut));b.textContent=NET.on?'Salir de la partida online':'Volver al menú principal'}return r}}
+
+;(()=>{let h=null;try{h=JSON.parse(sessionStorage.getItem('sendaJaguar.nethost')||'null');sessionStorage.removeItem('sendaJaguar.nethost')}catch(e){}if(!h||!PENDING)return;
+ NET.uid=h.uid;NET.code=h.code;NET.order=h.order;NET.on=true;NET.seat=0;NET.driving=true;NET.rev=0;netStash(null);
+ NET.ready=netAdapter().then(()=>{netBeat();netListen()}).catch(e=>netErr(e))})();
