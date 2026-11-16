@@ -203,12 +203,15 @@ const omen=k=>G&&G.omen===k;
 function mkPts(n,size,color,opacity,blend){const g=new THREE.BufferGeometry();const a=new Float32Array(n*3);for(let i=0;i<n;i++){a[i*3]=(Math.random()-.5)*26;a[i*3+1]=Math.random()*9;a[i*3+2]=(Math.random()-.5)*24}g.setAttribute('position',new THREE.BufferAttribute(a,3));const m=new THREE.PointsMaterial({size,color,transparent:true,opacity,depthWrite:false,blending:blend||THREE.NormalBlending});const o=new THREE.Points(g,m);o.frustumCulled=false;o.visible=false;scene.add(o);return o}
 const rainGeo=new THREE.BufferGeometry();const RN=1400;const rainArr=new Float32Array(RN*6);for(let i=0;i<RN;i++){const x=(Math.random()-.5)*28,y=Math.random()*10,z=(Math.random()-.5)*26;rainArr.set([x,y,z,x+.06,y-.45,z],i*6)}rainGeo.setAttribute('position',new THREE.BufferAttribute(rainArr,3));
 const rainObj=new THREE.LineSegments(rainGeo,new THREE.LineBasicMaterial({color:0xb8d8ff,transparent:true,opacity:.55,depthWrite:false}));rainObj.frustumCulled=false;rainObj.visible=false;scene.add(rainObj);
+const MIST=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');const gr=x.createRadialGradient(32,32,2,32,32,32);gr.addColorStop(0,'rgba(235,238,245,.55)');gr.addColorStop(1,'rgba(235,238,245,0)');x.fillStyle=gr;x.fillRect(0,0,64,64);const tx=new THREE.CanvasTexture(c);
+ const grp=new THREE.Group();grp.visible=false;for(let i=0;i<16;i++){const m=new THREE.Mesh(new THREE.PlaneGeometry(6,3.2),new THREE.MeshBasicMaterial({map:tx,transparent:true,depthWrite:false,opacity:0,fog:false}));m.rotation.x=-Math.PI/2;m.position.set((Math.random()-.5)*22,.55+Math.random()*.5,(Math.random()-.5)*18);m.userData.v=.25+Math.random()*.35;m.renderOrder=9;grp.add(m)}scene.add(grp);return grp})();
 const WX={rain:rainObj,petals:mkPts(300,.32,0xffa020,1),ash:mkPts(450,.24,0x2e2a2c,.85),dust:mkPts(320,.2,0xe0c898,.7)};
 const citySmoke=mkPts(160,.16,0xb8b0a8,.35);citySmoke.visible=true;const smokeSrc=cities.map(c=>[wx(c),c.top+.5,wz(c)]);const smokeLife=new Float32Array(160).map(()=>Math.random());
 let fogT={near:40,far:95};
 function weatherTick(dt,t){
  altarFx.forEach((m,i)=>{m.rotation.z+=dt*(2+i);m.position.y=.22+(i*.14)+Math.sin(t*2+i)*.03});
  const k=G&&G.omen;WX.rain.visible=k==='lluvia';WX.petals.visible=k==='fiesta';WX.ash.visible=k==='erupcion';WX.dust.visible=k==='viento'||k==='migracion';
+ {const on=k==='niebla';if(on)MIST.visible=true;let o=0;MIST.children.forEach(m=>{m.material.opacity+=((on?.8:0)-m.material.opacity)*.02;o=m.material.opacity;m.position.x+=dt*m.userData.v;if(m.position.x>12)m.position.x-=24});if(!on&&o<.01)MIST.visible=false}
  const step=(o,f)=>{if(!o.visible)return;const a=o.geometry.attributes.position;for(let i=0;i<a.count;i++){f(a,i)}a.needsUpdate=true};
  if(WX.rain.visible){const a=WX.rain.geometry.attributes.position;for(let i=0;i<RN;i++){let y=a.getY(i*2)-dt*16;if(y<0)y+=10;a.setY(i*2,y);a.setY(i*2+1,y-.45)}a.needsUpdate=true}
  step(WX.petals,(a,i)=>{let y=a.getY(i)-dt*.9;if(y<0)y+=9;a.setY(i,y);a.setX(i,a.getX(i)+Math.sin(t*1.5+i)*dt*.6);a.setZ(i,a.getZ(i)+Math.cos(t+i)*dt*.4)});
@@ -216,10 +219,11 @@ function weatherTick(dt,t){
  step(WX.dust,(a,i)=>{let x=a.getX(i)+dt*(k==='viento'?6:2.2);if(x>13)x-=26;a.setX(i,x);a.setY(i,.4+Math.abs(Math.sin(t*.8+i))*2)});
  const cs=citySmoke.geometry.attributes.position;for(let i=0;i<cs.count;i++){smokeLife[i]+=dt*.22;if(smokeLife[i]>1)smokeLife[i]-=1;const s=smokeSrc[i%smokeSrc.length],l=smokeLife[i];cs.setXYZ(i,s[0]+Math.sin(i*7+l*3)*.25*l-.2,s[1]+l*2.4,s[2]+Math.cos(i*3)*.2*l-.2)}cs.needsUpdate=true;
  citySmoke.material.opacity=k==='erupcion'?.5:.3;
- fogT=k==='niebla'?{near:8,far:34}:k==='erupcion'?{near:22,far:70}:k==='lluvia'?{near:26,far:80}:{near:40,far:95};
+ const cd=camera.position.length();/* niebla: bruma suave que deja ver el tablero cercano y esfuma los bordes */
+ fogT=k==='niebla'?{near:cd*.72,far:cd*1.55}:k==='erupcion'?{near:22,far:70}:k==='lluvia'?{near:26,far:80}:{near:40,far:95};
  scene.fog.near+=(fogT.near-scene.fog.near)*.03;scene.fog.far+=(fogT.far-scene.fog.far)*.03;
  if(k==='lluvia'){sun.intensity*=.985;hemi.intensity*=.99;scene.fog.color.lerp(new THREE.Color(0x8a9ab0),.04)}
- if(k==='niebla')scene.fog.color.lerp(new THREE.Color(0x9a9aa8),.03);if(k==='erupcion')scene.fog.color.lerp(new THREE.Color(0x6a4038),.02);
+ if(k==='niebla')scene.fog.color.lerp(new THREE.Color(0xb8bcc8),.02);if(k==='erupcion')scene.fog.color.lerp(new THREE.Color(0x6a4038),.02);
 }
 function drawOmen(){const P={no:0,ocasionales:.35,frecuentes:.65}[G.omenMode||'ocasionales'];if(Math.random()>=P){G.omen=null;setPhaseLight();return}const keys=Object.keys(OMENS).filter(k=>k!==G.omen);G.omen=rpick(keys);const o=OMENS[G.omen];log(`Presagio del día ${G.day}: ${o.name}.`);setTimeout(()=>sfxP('presagio'),2300);
  setTimeout(()=>msg('Presagio del día',`<div class="card" style="text-align:center;border-color:#b070ff"><div style="font-size:15px;opacity:.7">Día ${G.day}</div><b style="font-size:24px">${o.name}</b><div>${o.desc}</div></div>`),2400);
