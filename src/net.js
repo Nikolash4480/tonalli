@@ -114,7 +114,7 @@ function netListen(){NET.unsub=NET.db.sub(`rooms/${NET.code}`,r=>{if(!r)return;N
  netLiveMaybe(r.live)})}
 function netApply(r){const d=netSnap(r);if(!G||d.seed!==SEED){netStash(d);return location.reload()}
  NET.applying=true;try{
-  if(B)try{closeBattle()}catch(e){}
+  NET.liveAfter=null;if(B)try{closeBattle()}catch(e){}
   G.players.forEach(p=>p.obj&&removeBillboard(p.obj));G.beasts.forEach(b=>b.obj&&removeBillboard(b.obj));
   SAVED=d;continueGame();netStash(d);
   NET.driving=G.cur===NET.seat;
@@ -185,12 +185,13 @@ NET.liveSeq=0;NET.liveSeen={};NET.lastLive='';NET.liveT=null;NET.fight=null;
 function netLiveSched(){if(!NET.on||!NET.driving||NET.applying||!G||G.over||G.tut)return;clearTimeout(NET.liveT);NET.liveT=setTimeout(netLivePush,180)}
 function netLivePush(){if(!NET.on||!NET.driving||NET.applying||!G||G.over||!NET.db)return;
  let d;try{d=snapState(true)}catch(e){return}
- d.fight=B&&B.b?{kind:B.b.kind,who:G.players.indexOf(B.p),meter:B.meter,max:B.max,over:!!B.over}:null;
+ d.fight=netFightInfo();
  const s=JSON.stringify(d);if(s===NET.lastLive)return;NET.lastLive=s;
  NET.db.update(`rooms/${NET.code}`,{live:{rev:NET.rev,seq:++NET.liveSeq,by:NET.uid,sj:s}}).catch(()=>{})}
 function netLiveMaybe(L){if(!L||!L.sj||NET.driving||NET.applying||L.by===NET.uid||L.rev!==NET.rev||!G)return;
  if(L.seq<=(NET.liveSeen[L.rev]||0))return;NET.liveSeen[L.rev]=L.seq;let d;try{d=JSON.parse(L.sj)}catch(e){return}netLiveApply(d)}
 function netLiveApply(d){if(d.seed!==SEED||d.day!==G.day||d.phase!==G.phase||d.cur!==G.cur||d.players.length!==G.players.length)return;
+ if(spectFight(d.fight,d)){NET.liveAfter=d;NET.fight=d.fight;return}
  const walkTo=(o,q,r,hero)=>{const h=hexes.get(key(q,r));if(!h)return;o.userData.lock=true;walkObj(o,slotPos(h,hero&&(beastAt(h)||heroesAt(h).length>1)?-.34:0),620,()=>{o.userData.lock=false})};
  const PF=['hp','maxHp','res','glory','dignityLost','kills','trophies','hunt','items','used','poison','soul','hidden','broken','ap','freeMoves','gatherBonus','cacBonus'];
  d.players.forEach((s,i)=>{const p=G.players[i];PF.forEach(k=>{if(s[k]!==undefined)p[k]=s[k]});if(s.q!==p.q||s.r!==p.r){p.q=s.q;p.r=s.r;walkTo(p.obj,s.q,s.r,true)}});
@@ -208,3 +209,32 @@ function netLiveApply(d){if(d.seed!==SEED||d.day!==G.day||d.phase!==G.phase||d.c
  if(f&&!was){const w=G.players[f.who];const b=G.beasts.find(x=>x.kind===f.kind&&x.q===w.q&&x.r===w.r);if(b)try{signText('¡Combate!',b.obj)}catch(e){}}
  update()}
 {const _rb=renderBattle;renderBattle=function(){const r=_rb.apply(this,arguments);netLiveSched();return r}}
+
+/* --- combate en vivo para los que esperan: misma ventana, sin botones --- */
+{const _rs=resolve;resolve=function(f){if(B&&!B.spect){B.rollN=(B.rollN||0)+1;B.lastFace=f}return _rs.apply(this,arguments)}}
+{const _sm=setBMsg;setBMsg=function(t){if(B)B.lastMsg=t;return _sm.apply(this,arguments)}}
+function netFightInfo(){if(!B||!B.b||B.spect)return null;return{kind:B.b.kind,bq:B.b.q,br:B.b.r,who:G.players.indexOf(B.p),meter:B.meter,max:B.max,php:B.p.hp,pap:B.p.ap,rollN:B.rollN||0,face:B.lastFace||null,msg:B.lastMsg||'',over:!!B.over,pend:B.pending!=null}}
+function spectOpen(f){if(f.over)return false;const p=G.players[f.who],b=G.beasts.find(x=>x.kind===f.kind&&x.q===f.bq&&x.r===f.br);if(!p||!b)return false;
+ p.q=f.bq;p.r=f.br;const was=G.cur;openBattle(b);B.spect=true;B.rollSeen=f.rollN;B.meter=f.meter;
+ setBMsg(`<b style="color:${p.color}">${esc(p.name)}</b> se enfrenta a ${B.d.name}. Fuerza ${f.meter}/${f.max}, ataque ${atkOf(b)}. ${B.d.eff}.`);renderBattle();return true}
+function spectRoll(f){const bb=B,el=$('die');el.classList.add('rolling');let n=0;bb.rolling=true;
+ const it=setInterval(()=>{if(B!==bb){clearInterval(it);return}drawDie(rpick(FACES));if(++n>12){clearInterval(it);el.classList.remove('rolling');if(f.face)drawDie(f.face);el.classList.add('land');setTimeout(()=>el.classList.remove('land'),300);
+  f=bb.lastF||f;const p=bb.p,dmgB=bb.meter-f.meter,dmgP=p.hp-f.php;
+  if(dmgB>0){try{lunge(p.obj,bb.b.obj.position,.45,()=>{});floatText('-'+dmgB,bb.b.obj.position.clone().add(new THREE.Vector3(0,1.4,0)),'#f0c040')}catch(e){}}
+  if(dmgP>0){setTimeout(()=>{if(B!==bb)return;try{lunge(bb.b.obj,p.obj.position,.5);floatText('-'+dmgP,p.obj.position.clone().add(new THREE.Vector3(0,1.4,0)),'#ff7a5a')}catch(e){}},dmgB>0?450:0)}
+  bb.meter=f.meter;p.hp=f.php;p.ap=f.pap;setBMsg(spectMsg(f));bb.rolling=false;
+  if(f.meter<=0){const pos=bb.b.obj.position.clone().add(new THREE.Vector3(0,.6,0));bb.b.obj.userData.dying=performance.now();try{burst(pos,80,0xf0c040,2.4,{up:true,life:1.3,grav:-.5})}catch(e){}}
+  renderBattle();if(bb.wantClose)spectClose(bb)}},65)}
+function spectMsg(f){const p=G.players[f.who];return`<b style="color:${p.color}">${esc(p.name)}:</b> `+String(f.msg||'').replace(/\bTe sale\b/g,'Le sale').replace(/ te hace /g,' le hace ').replace(/Sacaste/g,'Sacó').replace(/Caíste/g,'Cayó')}
+function spectClose(bb){if(B!==bb||bb.closing)return;if(bb.rolling){bb.wantClose=true;return}bb.closing=true;setTimeout(()=>{if(B!==bb)return;closeBattle();if(NET.liveAfter){const d=NET.liveAfter;NET.liveAfter=null;netLiveApply(d)}},1600)}
+function spectFight(f,d){/* devuelve true si el combate en pantalla sigue abierto */
+ if(f&&B&&B.spect&&(f.kind!==B.b.kind||f.bq!==B.b.q||f.br!==B.b.r)){try{closeBattle()}catch(e){}}
+ if(f&&!B){if(!spectOpen(f))return false}
+ if(!B||!B.spect)return false;
+ if(!f){spectClose(B);return true}
+ B.lastF=f;
+ if(f.rollN>B.rollSeen){B.rollSeen=f.rollN;spectRoll(f)}
+ else if(!B.rolling){B.meter=f.meter;B.p.hp=f.php;B.p.ap=f.pap;if(f.rollN>0)setBMsg(spectMsg(f));renderBattle()}
+ if(f.over)spectClose(B);return true}
+{const _rb2=renderBattle;renderBattle=function(){const r=_rb2.apply(this,arguments);if(B&&B.spect){$('bCmds').innerHTML=`<div class="mut" style="padding:6px 2px;text-align:center">Combate de <b style="color:${B.p.color}">${esc(B.p.name)}</b> · mirando</div>`}return r}}
+setInterval(()=>{if(B&&!B.spect&&NET.on&&NET.driving)netLiveSched()},350);/* durante el combate el daño llega en pasos: mantener al día a los que miran */
