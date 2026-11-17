@@ -95,6 +95,7 @@ input{font-family:'VT323',monospace;font-size:20px;background:var(--ink);color:#
 #tut .tt span{color:#8fd8c8}
 #tut .tb{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
 #tut .tb button{font-size:17px;padding:4px 10px}
+#tut .tutL{display:flex;flex-wrap:wrap;gap:3px 10px;font-size:15px;margin-bottom:6px;color:#9a8f7a}#tut .tutL .ok{color:#7fd08a}#tut .tutL .cur{color:#ecc460;font-weight:bold}#tut .tutTip{background:rgba(70,168,146,.15);border-left:3px solid #46a892;padding:4px 7px;margin-bottom:6px;border-radius:4px}
 .tutGlow{animation:tutG 1s ease-in-out infinite;position:relative;z-index:31}
 @keyframes tutG{0%,100%{box-shadow:0 0 0 2px #46a892,0 0 10px 2px rgba(70,168,146,.6)}50%{box-shadow:0 0 0 3px #ecc460,0 0 18px 6px rgba(236,196,96,.75)}}
 
@@ -158,7 +159,7 @@ input{font-family:'VT323',monospace;font-size:20px;background:var(--ink);color:#
 </div>
 
 <div id="phFx" class="hidden"><div id="phTxt"></div></div>
-<div id="tut" class="hidden"><div class="tt"><b id="tutT"></b><span id="tutN"></span></div><div id="tutX"></div><div class="tb"><button class="plain" id="tutSkip" onclick="UI.tutSkip()">Salir</button><button class="pri plain" id="tutNext" onclick="UI.tutNext()">Siguiente</button></div></div>
+<div id="tut" class="hidden"><div class="tt"><b id="tutT"></b><span id="tutN"></span></div><div id="tutX"></div><div class="tb"><button class="plain" id="tutSkip" onclick="UI.tutSkip()">Saltar tutorial</button><button class="pri plain" id="tutNext" onclick="UI.tutNext()">Siguiente</button></div></div>
 <div id="ovTitle" onclick="UI.title()">
   <button id="tSnd" class="plain" onclick="event.stopPropagation();UI.titleSnd()" style="position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;padding:6px 10px;font-size:20px;border-color:rgba(227,176,75,.5)" aria-label="Sonido">🔊</button>
   <div class="emb"><div class="r r4"></div><div class="r r1"></div><div class="r r2"></div><div class="r r3"></div><span id="tEmb"></span></div>

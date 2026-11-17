@@ -933,25 +933,39 @@ function renderBestiary(){
 UI.bestiary=()=>{renderBestiary();$('ovBest').classList.remove('hidden')};
 UI.bestLvl=l=>{bestLvl=l;renderBestiary()};
 /* ================= tutorial (mapa reducido) ================= */
-const TUT_STEPS=[
- {t:'Bienvenida',x:'Sos un <b class="gold">guerrero jaguar</b> en el Teocalli Mayor. El objetivo es juntar la mayor <b class="gold">gloria</b>: cazando bestias, recolectando y cumpliendo pedidos de las ciudades antes de que termine el último día.',next:true},
- {t:'Moverse',x:'Arriba ves tus <b>PA</b> (puntos de acción). Tocá un <b>hexágono iluminado</b> para caminar: cuesta 1 PA, y subir un volcán cuesta 2. El agua no se cruza.',ev:'move'},
- {t:'Recolectar',x:'Las milpas, selvas, cerros y volcanes tienen recursos (los marcadores sobre el hexágono). Parate en uno y tocá <b>Recolectar</b>. Los recursos sirven para comprar objetos y cumplir pedidos.',ev:'gather',glow:"[onclick=\"UI.tap('gather')\"]"},
- {t:'Una bestia',x:'Una <b>calaca</b> merodea cerca. Caminá hasta su hexágono y tocá <b>Luchar</b>. Cada tirada de dado gasta 1 PA.',ev:'battle',glow:"[onclick=\"UI.tap('fight')\"]"},
- {t:'El dado',x:'Tirá el dado: <b>2 a 5</b> hacen ese daño, la <b style="color:#9ac0ff">cara azul</b> es un golpe crítico y la <b style="color:#d0a0ff">cara de bestia</b> activa la <b>habilidad de bestia</b> del monstruo. Después de tu tirada, la bestia contraataca. Vencela y cerrá el combate.',ev:'battleEnd',inb:true},
- {t:'Pasar el turno',x:'Cuando no te queden PA o quieras terminar, tocá <b>Fin de turno</b>. Cada día tiene mañana, tarde y noche: <b>de noche las bestias se mueven</b> y al amanecer algunas se fortalecen.',ev:'endTurn',glow:"[onclick=\"UI.tap('end')\"]"},
- {t:'¡Listo!',x:'Ya sabés lo básico. En las <b>ciudades</b> podés descansar, comerciar y comprar objetos, y en partidas de 7 días, el día 6 despierta el <b style="color:#ff9a40">Xiuhcóatl</b>. ¡Suerte en la Senda del Jaguar!',next:true,last:true}];
-let tutI=-1;
-function tutShow(){const st=TUT_STEPS[tutI];const el=$('tut');if(!st){el.classList.add('hidden');return}el.classList.remove('hidden');el.classList.toggle('inb',!!(st.inb||B));
- $('tutT').textContent=st.t.toUpperCase();$('tutN').textContent=`${tutI+1}/${TUT_STEPS.length}`;$('tutX').innerHTML=st.x;
- const nb=$('tutNext');nb.style.display=st.next?'':'none';nb.textContent=st.last?'Ir al menú':'Siguiente';$('tutSkip').style.display=st.last?'none':'';tutGlow()}
-function tutGlow(){document.querySelectorAll('.tutGlow').forEach(e=>e.classList.remove('tutGlow'));const st=TUT_STEPS[tutI];if(st&&st.glow)document.querySelectorAll(st.glow).forEach(e=>e.classList.add('tutGlow'))}
-function tutEv(e){if(!G||!G.tut)return;const st=TUT_STEPS[tutI];if(st&&st.ev===e){tutI++;setTimeout(tutShow,e==='battle'?900:500)}}
-function tutAP(){if(G&&G.tut&&!G.over){const p=curP();if(p&&p.ap<2&&tutI<5)p.ap=3}}
-function tutExit(){try{sessionStorage.removeItem('sendaJaguar.tut');localStorage.removeItem(SAVE_KEY)}catch(e){}location.reload()}
+/* tutorial por objetivos: se pueden cumplir en cualquier orden */
+const TUT_TASKS=[
+ {k:'move',t:'Moverte',x:'Tocá un <b>hexágono iluminado</b> para caminar. Cada paso cuesta <b>1 PA</b> (los cuadraditos de tu panel); subir un volcán cuesta 2 y el agua no se cruza.'},
+ {k:'gather',t:'Recolectar',x:'Parate en una milpa, selva, cerro o volcán y tocá <b>Recolectar</b> (1 PA). Con maíz, madera, piedra y obsidiana se cumplen los pedidos de las ciudades.',glow:"[onclick=\"UI.tap('gather')\"]"},
+ {k:'fight',t:'Vencer a la calaca',x:'Una <b>calaca</b> merodea cerca (aro rojo). Caminá a su hexágono y tocá <b>Luchar</b> (1 PA). Vencerla te da gloria y un <b>trofeo</b>.',glow:"[onclick=\"UI.tap('fight')\"]"},
+ {k:'hunt',t:'Entregar el trofeo',x:'Volvé al <b>Teocalli Mayor</b> (el templo del centro) y tocá <b>Cacerías</b> para entregar el hueso. El primero en completar una cacería se lleva su premio.',glow:"[onclick=\"UI.tap('hunt')\"]",need:'fight'},
+ {k:'end',t:'Terminar el turno',x:'Tocá <b>Terminar turno</b>: los PA que te sobran se pierden. Después viene tu <b>acecho</b>, donde con la furia podés mover bestias contra tus rivales. Volvé a tocar <b>Terminar turno</b> para cerrarlo.',glow:"[onclick=\"UI.tap('end')\"]"}];
+const TUT_TIPS={
+ battle:'<b>Combate.</b> Tocá <b>Tirar dado</b> (1 PA): del 2 al 5 hacen ese daño, la <b style="color:#9ac0ff">cara azul</b> es crítico y la <b style="color:#d0a0ff">cara de bestia</b> la cura 2 y activa su habilidad. Después la bestia te ataca. <b>Huir</b> cuesta 1 PA y 1 de vida.',
+ win:'¡Venciste! Ganaste <b class="gold">gloria</b> y un <b>Hueso del Mictlán</b>. Los trofeos se pueden usar en combate (+1 a una tirada) o entregar en las cacerías.',
+ flee:'Huiste: perdiste 1 PA y 1 de vida. La calaca sigue ahí y conserva sus heridas hasta el amanecer.',
+ ko:'Caíste: volvés al Teocalli Mayor con la vida llena, pero perdés 1 de dignidad y la mitad de tus recursos. Podés volver a intentarlo.'};
+let tutI=-1;const TUTS={done:{},tip:null,fin:false,hidden:false,hunts:''};
+const tutCur=()=>TUT_TASKS.find(t=>!TUTS.done[t.k]&&(!t.need||TUTS.done[t.need]));
+function tutShow(){const el=$('tut');if(!G||!G.tut||TUTS.hidden){el.classList.add('hidden');return}el.classList.remove('hidden');el.classList.toggle('inb',!!B);
+ const nb=$('tutNext'),sk=$('tutSkip');
+ if(tutI===0){$('tutT').textContent='TUTORIAL';$('tutN').textContent='';$('tutX').innerHTML='Sos un <b class="gold">guerrero jaguar</b> en el Teocalli Mayor. Ganás juntando <b class="gold">gloria</b>: cazando bestias, recolectando y cumpliendo pedidos de las ciudades.<br><span class="mut">Vas a practicar 5 cosas, en el orden que quieras.</span>';nb.style.display='';nb.textContent='Empezar';sk.textContent='Saltar tutorial';sk.style.display='';tutGlow();return}
+ const n=TUT_TASKS.filter(t=>TUTS.done[t.k]).length;
+ const list=`<div class="tutL">${TUT_TASKS.map(t=>`<span class="${TUTS.done[t.k]?'ok':t===tutCur()?'cur':''}">${TUTS.done[t.k]?'✔':'○'} ${t.t}</span>`).join('')}</div>`;
+ if(TUTS.fin){$('tutT').textContent='¡TUTORIAL COMPLETO!';$('tutN').textContent=`${n}/${TUT_TASKS.length}`;$('tutX').innerHTML=list+'Ya sabés lo básico. En las <b>ciudades</b> descansás, comerciás y cumplís pedidos, y en partidas de 7 días el día 6 despierta un jefe. Podés seguir practicando en este mapa o ir al menú para jugar una partida.';
+  nb.style.display='';nb.textContent='Ir al menú';sk.style.display='';sk.textContent='Seguir practicando';tutGlow();return}
+ const c=tutCur();$('tutT').textContent=B?'COMBATE':(c?c.t.toUpperCase():'TUTORIAL');$('tutN').textContent=`${n}/${TUT_TASKS.length}`;
+ const tip=B?TUT_TIPS.battle:TUTS.tip?TUT_TIPS[TUTS.tip]:null;
+ $('tutX').innerHTML=(B?'':list)+(tip?`<div class="tutTip">${tip}</div>`:'')+(!B&&c?`<div>${c.x}</div>`:'');
+ nb.style.display='none';sk.style.display=B?'none':'';sk.textContent='Saltar tutorial';tutGlow()}
+function tutGlow(){document.querySelectorAll('.tutGlow').forEach(e=>e.classList.remove('tutGlow'));if(!G||!G.tut||B||TUTS.fin||tutI===0)return;const c=tutCur();if(c&&c.glow)document.querySelectorAll(c.glow).forEach(e=>e.classList.add('tutGlow'))}
+function tutDone(k,tip){if(!G||!G.tut)return;if(tip!==undefined)TUTS.tip=tip;if(k&&!TUTS.done[k]){TUTS.done[k]=true;sfxP&&0}if(TUT_TASKS.every(t=>TUTS.done[t.k])&&!TUTS.fin){TUTS.fin=true;TUTS.hidden=false}setTimeout(tutShow,k==='move'?300:450)}
+function tutEv(e){if(!G||!G.tut)return;if(e==='move'){TUTS.tip=null;tutDone('move')}}
+function tutAP(){if(G&&G.tut&&!G.over&&!TUTS.fin){const p=curP();if(p&&p.ap<2)p.ap=3}}
+function tutExit(){try{sessionStorage.removeItem('sendaJaguar.tut');sessionStorage.setItem('sendaJaguar.toMenu','1')}catch(e){}location.reload()}
 UI.tutorial=()=>{try{sessionStorage.setItem('sendaJaguar.tut','1')}catch(e){}location.reload()};
-UI.tutNext=()=>{const st=TUT_STEPS[tutI];if(st&&st.last)return tutExit();tutI++;tutShow()};
-UI.tutSkip=()=>tutExit();
+UI.tutNext=()=>{if(TUTS.fin)return tutExit();if(tutI===0){tutI=1;tutShow()}};
+UI.tutSkip=()=>{if(TUTS.fin){TUTS.hidden=true;tutShow();toast('Podés salir cuando quieras desde ☰ → Volver al menú principal');return}tutExit()};
 function startTutorial(){
  $('ovTitle').classList.add('out');setTimeout(()=>$('ovTitle').classList.add('hidden'),400);
  Object.assign(setup,{bestias:'clasicas',n:1,days:2,omens:'no',altars:false,respawn:'auto',extras:EXTRAS});setup.players[0]={name:'Aprendiz',hero:'jaguar'};
@@ -959,14 +973,14 @@ function startTutorial(){
  startGame();Object.assign(START,keep);G.tut=true;G.bossDone=true;
  // calaca a 2 hexágonos del Teocalli, en tierra
  const near=allHex.filter(h=>canHold(h)&&hdist(h,capital)===2&&!TERR[h.t].city);const h=near.length?rpick(near):null;if(h)spawn('calaca',h);
- tutI=0;tutShow();
+ tutI=0;TUTS.hunts=JSON.stringify(G.players.map(p=>p.hunt));tutShow();
 }
-{const _m=walkObj;walkObj=function(o){const r=_m.apply(this,arguments);if(G&&G.tut&&G.players[0]&&G.players[0].obj===o&&!B)setTimeout(()=>tutEv('move'),700);return r}}
-{const _a2=act;act=function(a){const p0=curP&&G?curP().ap:0;const r=_a2.apply(this,arguments);if(a==='gather'&&G&&G.tut&&curP().ap!==p0)tutEv('gather');tutAP();return r}}
-{const _o2=openBattle;openBattle=function(){const r=_o2.apply(this,arguments);if(G&&G.tut){tutEv('battle');setTimeout(()=>{$('tut').classList.add('inb')},50)}return r}}
-{const _c2=closeBattle;closeBattle=function(){const r=_c2.apply(this,arguments);if(G&&G.tut){if(!G.beasts.some(b=>b.kind==='calaca')||TUT_STEPS[tutI]?.ev==='battleEnd')tutEv('battleEnd');tutAP();$('tut').classList.remove('inb');tutGlow()}return r}}
-{const _e2=endTurn;endTurn=function(){const r=_e2.apply(this,arguments);if(G&&G.tut){tutEv('endTurn');tutAP()}return r}}
-{const _u2=update;update=function(){const r=_u2.apply(this,arguments);if(G&&G.tut){tutAP();tutGlow()}return r}}
+{const _m=walkObj;walkObj=function(o){const r=_m.apply(this,arguments);if(G&&G.tut&&G.players[0]&&G.players[0].obj===o&&!B&&tutI>0)setTimeout(()=>tutEv('move'),700);return r}}
+{const _a2=act;act=function(a){const p0=curP&&G?curP().ap:0;const r=_a2.apply(this,arguments);if(G&&G.tut&&tutI>0){if(a==='gather'&&curP().ap!==p0)tutDone('gather',null)}tutAP();return r}}
+{const _o2=openBattle;openBattle=function(){const r=_o2.apply(this,arguments);if(G&&G.tut){if(tutI===0)tutI=1;TUTS.tip=null;setTimeout(tutShow,60)}return r}}
+{const _c2=closeBattle;closeBattle=function(){const won=!!(B&&B.meter<=0),ko=!!(B&&B.koPending),r=_c2.apply(this,arguments);if(G&&G.tut){if(won)tutDone('fight','win');else tutDone(null,ko?'ko':'flee');tutAP()}return r}}
+{const _e2=endTurn;endTurn=function(){const r=_e2.apply(this,arguments);if(G&&G.tut&&tutI>0){tutDone('end',null);tutAP()}return r}}
+{const _u2=update;update=function(){const r=_u2.apply(this,arguments);if(G&&G.tut){const hs=JSON.stringify(G.players.map(p=>p.hunt));if(TUTS.hunts&&hs!==TUTS.hunts&&tutI>0)tutDone('hunt',null);TUTS.hunts=hs;tutAP();tutGlow()}return r}}
 {const _sv=saveGame;saveGame=function(){if(G&&G.tut)return;return _sv.apply(this,arguments)}}
 {const _ub2=upgradeBeasts;upgradeBeasts=function(){if(G&&G.tut)return;return _ub2.apply(this,arguments)}}
 if(TUT)setTimeout(startTutorial,300);

@@ -168,6 +168,7 @@ Object.assign(UI,{
 
 /* volver al menú principal desde la partida */
 UI.toMenu=()=>{if(B){toast('Terminá el combate antes de salir');return}if(midAction()){toast('Esperá a que termine la acción en curso');return}
+ if(G&&G.tut){if(!confirm('¿Salir del tutorial?'))return;return tutExit()}
  const online=NET.on;const msg=online?'¿Salir de la partida online? Podés volver a entrar con el código '+NET.code+'.':'¿Volver al menú principal? La partida queda guardada y la podés continuar.';
  if(!confirm(msg))return;
  try{if(!online&&G&&!G.over&&!G.tut)saveGame(true)}catch(e){}
