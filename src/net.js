@@ -166,10 +166,10 @@ Object.assign(UI,{
 {const _sr=showRings;showRings=function(){const r=_sr.apply(this,arguments);if(NET.on&&!NET.driving)rings.forEach(o=>o.visible=false);return r}}
 
 /* volver al menú principal desde la partida */
-UI.toMenu=()=>{if(B){toast('Terminá el combate antes de salir');return}
+UI.toMenu=()=>{if(B){toast('Terminá el combate antes de salir');return}if(midAction()){toast('Esperá a que termine la acción en curso');return}
  const online=NET.on;const msg=online?'¿Salir de la partida online? Podés volver a entrar con el código '+NET.code+'.':'¿Volver al menú principal? La partida queda guardada y la podés continuar.';
  if(!confirm(msg))return;
- try{if(!online&&G&&!G.over&&!G.tut)saveGame()}catch(e){}
+ try{if(!online&&G&&!G.over&&!G.tut)saveGame(true)}catch(e){}
  if(online){try{sessionStorage.removeItem('sendaJaguar.net')}catch(e){}}
  try{sessionStorage.setItem('sendaJaguar.toMenu','1')}catch(e){}location.reload()};
 ;(()=>{let m=false;try{m=sessionStorage.getItem('sendaJaguar.toMenu')==='1';sessionStorage.removeItem('sendaJaguar.toMenu')}catch(e){}if(m)setTimeout(()=>{try{$('ovTitle').classList.add('hidden');UI.menuShow()}catch(e){}},300)})();
