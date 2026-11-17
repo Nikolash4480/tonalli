@@ -40,7 +40,7 @@ function helpBody(t){const B=k=>BEASTS[k];
   ${hRow(hR('hueso')||'🦴','Trofeos (uno por tirada)','Tocá el trofeo en el combate para gastarlo: hueso +1, garra +1, colmillo +2.')}
   ${hRow(hA('copal'),'Objetos','Macuahuitl, átlatl, muñequeras y otros suman a la tirada. Copal y agua curan.')}</div>
   ${hEx(`Peleás contra una calaca (fuerza 3) con el guerrero jaguar. Gastás un hueso (+1) y sacás 2: 2 +1 jaguar +1 hueso = 4 de daño. La calaca cae y ganás gloria y otro hueso.`)}
-  <div class="hcard mut"><b>Huir</b> cuesta 1 PA, o 1 de vida si no tenés PA (nunca baja de 1). Si te quedás sin PA, te retirás: la bestia conserva sus heridas hasta el amanecer.</div>`;
+  <div class="hcard mut"><b>Huir</b> cuesta 1 de vida y 1 PA (si no te quedan PA, solo la vida). Huir nunca te deja con menos de 1 de vida. Si te quedás sin PA, te retirás: la bestia conserva sus heridas hasta el amanecer.</div>`;
  if(t==='best'){const L=[['calaca',1],['tzitzimitl',2],['tlaltecuhtli',3]];
   return`<div class="hcard"><b>Bestias del valle</b><p class="mut">Cuanto más alto el nivel, más fuerte y más gloria da.</p>
   ${L.map(([k,l])=>hRow(hP(k,46),`${B(k).name} · nivel ${l}`,`Fuerza ${B(k).str} · ataque ${B(k).atk}<br>Habilidad: ${B(k).eff}.<br>Deja: ${TROPHY[B(k).trophy]?TROPHY[B(k).trophy].name:'—'}.`)).join('')}

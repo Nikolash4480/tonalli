@@ -231,9 +231,10 @@ function drawOmen(){const P={no:0,ocasionales:.35,frecuentes:.65}[G.omenMode||'o
 
 /* guardado */
 const midAction=()=>!!(G&&!G.over&&(G.walking||G.transition||G.mode!=='act'||G.pending||G.rp||(G.pendingRespawn&&G.pendingRespawn.length)));
-function saveGame(mid){if(!G||G.over)return;try{const d={v:1,mid:!!mid,lvlKind:G.lvlKind||null,stage:G.stage||null,stageDone:!!G.stageDone,bestias:G.bestias,bossKind:G.bossKind,extras:G.extras,altars:G.altars,respawnMode:G.respawnMode,omenMode:G.omenMode,seed:SEED,day:G.day,days:G.days,phase:G.phase,cur:G.cur,start:G.start,turnCount:G.turnCount,respawn:G.respawn,hunts:G.hunts,kindUps:G.kindUps||{},bossDone:!!G.bossDone,omen:G.omen||null,log:G.log.slice(0,30),
+function snapState(mid){return{v:1,mid:!!mid,lvlKind:G.lvlKind||null,stage:G.stage||null,stageDone:!!G.stageDone,bestias:G.bestias,bossKind:G.bossKind,extras:G.extras,altars:G.altars,respawnMode:G.respawnMode,omenMode:G.omenMode,seed:SEED,day:G.day,days:G.days,phase:G.phase,cur:G.cur,start:G.start,turnCount:G.turnCount,respawn:G.respawn,hunts:G.hunts,kindUps:G.kindUps||{},bossDone:!!G.bossDone,omen:G.omen||null,log:G.log.slice(0,30),
  players:G.players.map(p=>({name:p.name,hero:p.hero,color:p.color,hue:p.hue||0,hp:p.hp,maxHp:p.maxHp,res:p.res,glory:p.glory,dignityLost:p.dignityLost,kills:p.kills,trophies:p.trophies,hunt:p.hunt,items:p.items,used:p.used||{},poison:p.poison||0,soul:p.soul||0,hidden:p.hidden||null,broken:p.broken||null,ap:p.ap||0,freeMoves:p.freeMoves||0,gatherBonus:!!p.gatherBonus,cacBonus:!!p.cacBonus,q:p.q,r:p.r})),
- beasts:G.beasts.map(b=>({kind:b.kind,q:b.q,r:b.r,up:b.up,wound:b.wound||0})),cities:cities.map(c=>({card:c.card,deck:c.deck,done:c.done||[]})),stock:allHex.filter(h=>RESOF[h.t]).map(h=>h.stock)};
+ beasts:G.beasts.map(b=>({kind:b.kind,q:b.q,r:b.r,up:b.up,wound:b.wound||0})),cities:cities.map(c=>({card:c.card,deck:c.deck,done:c.done||[]})),stock:allHex.filter(h=>RESOF[h.t]).map(h=>h.stock)}}
+function saveGame(mid){if(!G||G.over)return;try{const d=snapState(mid);
  persistSave(d)}catch(e){console.warn(e)}}
 function clearSave(){try{localStorage.removeItem(SAVE_KEY)}catch(e){}}
 function continueGame(){const d=SAVED;try{
@@ -558,10 +559,10 @@ function renderBattle(){
  <div class="row" style="gap:6px"><div class="bar" style="width:48%"><i style="width:${clamp(p.hp/p.maxHp,0,1)*100}%"></i></div><div class="bar" style="width:48%"><i style="width:${clamp(meter/B.max,0,1)*100}%;background:linear-gradient(#b08aff,#5a3080)"></i></div></div>
  <div class="row mut" style="gap:6px;font-size:17px"><span style="width:48%">Vida ${Math.max(0,p.hp)}/${p.maxHp} · PA ${p.ap}</span><span style="width:48%;text-align:right">Fuerza ${Math.max(0,meter)}/${B.max}</span></div>${B.curse?'<div style="color:#b08aff;font-size:17px">Eclipse: −2 a tu próxima tirada</div>':''}${B.garra?`<div style="color:#c0a0ff;font-size:17px">${B.troK?TROPHY[B.troK].name:'Trofeo'}: +${B.garra} a tu próxima tirada</div>`:''}`;
  let c;
- if(B.over&&B.next&&p.hp>0)c=`<button class="pri" onclick="UI.nextFight()">Enfrentar a ${B.next?BEASTS[B.next.kind].name:''}</button><button onclick="UI.fleeNext()">Huir · ${p.ap>=1?'1 PA':'1 vida'}</button>`;
+ if(B.over&&B.next&&p.hp>0)c=`<button class="pri" onclick="UI.nextFight()">Enfrentar a ${B.next?BEASTS[B.next.kind].name:''}</button><button onclick="UI.fleeNext()">Huir · ${p.ap>=1?'1 PA + 1 vida':'1 vida'}</button>`;
  else if(B.over){c='';if(!B.autoClose){const bb=B;B.autoClose=setTimeout(()=>{if(B===bb&&!B.closing){B.closing=true;closeBattle()}},1800)}}
  else if(B.pending!=null)c=`<button class="pri" onclick="UI.accept()">Aceptar</button><button onclick="UI.reroll()">Repetir (${B.rerolls})</button>`;
- else c=`<button class="pri" onclick="UI.roll()" ${B.busy?'disabled':''}>Tirar dado · 1 PA</button><button onclick="UI.flee()" ${B.busy||(B.noFlee&&!B.over&&B.p.ap>=1)?'disabled':''}>Huir · ${p.ap>=1?'1 PA':'1 vida'}</button>${['copal','agua'].filter(k=>has(p,k)&&!(p.used||{})[k]&&p.hp<p.maxHp).map(k=>`<button onclick="UI.bUse('${k}')" ${B.busy?'disabled':''}>${ITEMS[k].name}</button>`).join('')}${B.garra?'':Object.keys(TRO_BON).filter(k=>p.trophies[k]>0).map(k=>`<button onclick="UI.trophy('${k}')" ${B.busy?'disabled':''}>${TROPHY[k].name.split(' ')[0]} (+${TRO_BON[k]}) ×${p.trophies[k]}</button>`).join('')}`;
+ else c=`<button class="pri" onclick="UI.roll()" ${B.busy?'disabled':''}>Tirar dado · 1 PA</button><button onclick="UI.flee()" ${B.busy||(B.noFlee&&!B.over&&B.p.ap>=1)?'disabled':''}>Huir · ${p.ap>=1?'1 PA + 1 vida':'1 vida'}</button>${['copal','agua'].filter(k=>has(p,k)&&!(p.used||{})[k]&&p.hp<p.maxHp).map(k=>`<button onclick="UI.bUse('${k}')" ${B.busy?'disabled':''}>${ITEMS[k].name}</button>`).join('')}${B.garra?'':Object.keys(TRO_BON).filter(k=>p.trophies[k]>0).map(k=>`<button onclick="UI.trophy('${k}')" ${B.busy?'disabled':''}>${TROPHY[k].name.split(' ')[0]} (+${TRO_BON[k]}) ×${p.trophies[k]}</button>`).join('')}`;
  $('bCmds').innerHTML=c;
 }
 const dieCtx=$('dieC').getContext('2d');
@@ -630,11 +631,12 @@ function resolve(f){
 }
 function saveWound(){if(B&&!B.b.obj.userData.dying)B.b.wound=Math.max(0,B.max-B.meter)}
 function outOfAP(){if(!B)return;saveWound();B.over=true;B.busy=false;setBMsg(`<b style="color:#ff9a40">Sin PA:</b> te retirás. ${B.d.name} conserva sus heridas hasta el amanecer (fuerza ${B.meter}/${B.max}).`);log(`${B.p.name} se queda sin fuerzas y se retira de ${B.d.name}.`);renderBattle()}
-function flee(){if(!B||B.busy)return;if(B.noFlee&&!B.over&&B.p.ap>=1){toast('¡El Xochitónal no te suelta!');return}const p=B.p;if(!B.over){if(p.ap>=1)p.ap--;else{p.hp=Math.max(1,p.hp-1);floatText('-1',p.obj.position.clone().add(new THREE.Vector3(0,1.4,0)),'#ff7a5a')}}saveWound();log(`${p.name} huye de ${B.d.name}.`);B.over=true;closeBattle()}
+function flee(){if(!B||B.busy)return;if(B.noFlee&&!B.over&&B.p.ap>=1){toast('¡El Xochitónal no te suelta!');return}const p=B.p;if(!B.over){if(p.ap>=1)p.ap--;fleeHurt(p)}saveWound();log(`${p.name} huye de ${B.d.name}.`);B.over=true;closeBattle()}
 function checkKOEnd(){if(G&&G.endAfterKO&&!B){G.endAfterKO=false;G.pending=null;toast('Caíste: tu turno termina');setTimeout(()=>endTurn(),900)}}
 function nextFight(){if(!B||!B.next)return;const nb=B.next,saved=B.saved,dead=B.b;if(dead.obj.userData.dying)removeBillboard(dead.obj);(B.hiddenDecor||[]).forEach(c=>c.visible=true);B=null;
  openBattle(nb);B.saved=saved;signText('¡Otra bestia!',nb.obj)}
-function fleeNext(){if(!B)return;const p=B.p;if(p.ap>=1)p.ap--;else p.hp=Math.max(1,p.hp-1);log(`${p.name} huye de ${BEASTS[B.next.kind].name}.`);B.next=null;closeBattle()}
+function fleeHurt(p){if(p.hp>1){p.hp--;floatText('-1',p.obj.position.clone().add(new THREE.Vector3(0,1.4,0)),'#ff7a5a')}}
+function fleeNext(){if(!B)return;const p=B.p;if(p.ap>=1)p.ap--;fleeHurt(p);log(`${p.name} huye de ${BEASTS[B.next.kind].name}.`);B.next=null;closeBattle()}
 function closeBattle(){
  const{p,b}=B;
  if(b.obj.userData.dying)removeBillboard(b.obj);else b.obj.userData.lock=false;

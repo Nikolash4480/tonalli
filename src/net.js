@@ -6,7 +6,7 @@
 const NET={on:false,code:null,uid:null,seat:-1,driving:false,applying:false,rev:0,room:null,db:null,unsub:null,hb:null,final:false};
 const NET_FB_VER='10.12.2';
 /* el estado se guarda como texto: Firebase borra listas y objetos vacíos */
-const netSnap=r=>{if(!r)return null;if(r.sj){try{return JSON.parse(r.sj)}catch(e){return null}}return r.snap||null};
+const netSnap=r=>{if(!r)return null;/* si hay jugadas en vivo de este mismo turno, retomar desde ahí (recargas, reconexiones) */if(r.live&&r.live.sj&&r.live.rev===r.rev&&r.sj){try{const d=JSON.parse(r.live.sj);delete d.fight;return d}catch(e){}}if(r.sj){try{return JSON.parse(r.sj)}catch(e){return null}}return r.snap||null};
 function netUid(){const S=new URLSearchParams(location.search).get('net')==='local'?sessionStorage:localStorage;let u=null;try{u=S.getItem('sendaJaguar.uid')}catch(e){}if(!u){u='u'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);try{S.setItem('sendaJaguar.uid',u)}catch(e){}}return u}
 function netName(v){try{if(v!==undefined)localStorage.setItem('sendaJaguar.name',v);return localStorage.getItem('sendaJaguar.name')||''}catch(e){return v||''}}
 const netGetPath=(o,p)=>p.split('/').filter(Boolean).reduce((a,k)=>a==null?undefined:a[k],o);
@@ -109,8 +109,9 @@ function netLeave(){clearInterval(NET.hb);clearInterval(NET.lt);NET.unsub&&NET.u
 function netBootInto(r){netStash(netSnap(r));location.reload()}
 /* --- durante la partida --- */
 function netListen(){NET.unsub=NET.db.sub(`rooms/${NET.code}`,r=>{if(!r)return;NET.room=r;netHud();
- if(netSnap(r)&&r.rev>NET.rev&&r.by!==NET.uid){NET.rev=r.rev;netApply(r)}
- else if(r.rev>NET.rev)NET.rev=r.rev})}
+ if(netSnap(r)&&r.rev>NET.rev&&r.by!==NET.uid){NET.rev=r.rev;NET.fight=null;netApply(r)}
+ else if(r.rev>NET.rev)NET.rev=r.rev;
+ netLiveMaybe(r.live)})}
 function netApply(r){const d=netSnap(r);if(!G||d.seed!==SEED){netStash(d);return location.reload()}
  NET.applying=true;try{
   if(B)try{closeBattle()}catch(e){}
@@ -121,7 +122,7 @@ function netApply(r){const d=netSnap(r);if(!G||d.seed!==SEED){netStash(d);return
   else if(NET.driving){toast('¡Es tu turno!');try{sfxP('gloria')}catch(e){}document.title='¡Tu turno! · Tonalli'}
   else document.title='Tonalli · Senda del Jaguar';
  }finally{NET.applying=false}netHud();update()}
-function persistSave(d){
+function persistSave(d){clearTimeout(NET.liveT);NET.lastLive='';
  if(G&&G.tut)return;
  if(!NET.on){localStorage.setItem(SAVE_KEY,JSON.stringify(d));return}
  netStash(d);if(NET.applying||!NET.driving)return;
@@ -139,7 +140,7 @@ function netHud(){let el=$('netHud');if(!NET.on){el&&el.remove();return}
 {const _oh=onHex;onHex=function(h){if(!myTurn()){toast('Esperá tu turno');return}return _oh.apply(this,arguments)}}
 {const _ac=act;act=function(){if(!myTurn())return;return _ac.apply(this,arguments)}}
 {const _ac2=autoCheck;autoCheck=function(){if(NET.on&&(!NET.driving||NET.applying))return;return _ac2.apply(this,arguments)}}
-{const _up=update;update=function(){const r=_up.apply(this,arguments);if(NET.on&&G&&!NET.driving&&!G.over){const n=G.players[G.cur]?G.players[G.cur].name:'';$('acts').innerHTML=`<div class="mut" style="padding:6px 2px">Esperando a <b style="color:${G.players[G.cur].color}">${esc(n)}</b>…</div>`;$('hint').textContent=`Turno de ${n}`}return r}}
+{const _up=update;update=function(){const r=_up.apply(this,arguments);if(NET.on&&G&&!NET.driving&&!G.over){const n=G.players[G.cur]?G.players[G.cur].name:'';$('acts').innerHTML=`<div class="mut" style="padding:6px 2px">Esperando a <b style="color:${G.players[G.cur].color}">${esc(n)}</b>…</div>`;const f=NET.fight;$('hint').textContent=f&&!f.over?`${n} pelea contra ${BEASTS[f.kind].name} · le quedan ${f.meter} de ${f.max}`:`Turno de ${n}`}if(NET.on&&NET.driving)netLiveSched();return r}}
 {const _eg=endGame;endGame=function(){if(NET.on&&NET.driving&&!NET.applying){NET.final=true;try{saveGame()}finally{NET.final=false}}const r=_eg.apply(this,arguments);if(NET.on){netForget();document.title='Tonalli · Senda del Jaguar'}return r}}
 {const _ba=buildAltars;buildAltars=function(){if(buildAltars.done)return;buildAltars.done=true;return _ba.apply(this,arguments)}}
 {const _lg=log;log=function(m){if(NET.applying&&/^Partida retomada/.test(m))return;return _lg.apply(this,arguments)}}
@@ -178,3 +179,32 @@ UI.toMenu=()=>{if(B){toast('Terminá el combate antes de salir');return}if(midAc
 ;(()=>{let h=null;try{h=JSON.parse(sessionStorage.getItem('sendaJaguar.nethost')||'null');sessionStorage.removeItem('sendaJaguar.nethost')}catch(e){}if(!h||!PENDING)return;
  NET.uid=h.uid;NET.code=h.code;NET.order=h.order;NET.on=true;NET.seat=0;NET.driving=true;NET.rev=0;netStash(null);
  NET.ready=netAdapter().then(()=>{netBeat();netListen()}).catch(e=>netErr(e))})();
+
+/* --- sincronización en vivo: cada acción del que juega se refleja en los demás --- */
+NET.liveSeq=0;NET.liveSeen={};NET.lastLive='';NET.liveT=null;NET.fight=null;
+function netLiveSched(){if(!NET.on||!NET.driving||NET.applying||!G||G.over||G.tut)return;clearTimeout(NET.liveT);NET.liveT=setTimeout(netLivePush,180)}
+function netLivePush(){if(!NET.on||!NET.driving||NET.applying||!G||G.over||!NET.db)return;
+ let d;try{d=snapState(true)}catch(e){return}
+ d.fight=B&&B.b?{kind:B.b.kind,who:G.players.indexOf(B.p),meter:B.meter,max:B.max,over:!!B.over}:null;
+ const s=JSON.stringify(d);if(s===NET.lastLive)return;NET.lastLive=s;
+ NET.db.update(`rooms/${NET.code}`,{live:{rev:NET.rev,seq:++NET.liveSeq,by:NET.uid,sj:s}}).catch(()=>{})}
+function netLiveMaybe(L){if(!L||!L.sj||NET.driving||NET.applying||L.by===NET.uid||L.rev!==NET.rev||!G)return;
+ if(L.seq<=(NET.liveSeen[L.rev]||0))return;NET.liveSeen[L.rev]=L.seq;let d;try{d=JSON.parse(L.sj)}catch(e){return}netLiveApply(d)}
+function netLiveApply(d){if(d.seed!==SEED||d.day!==G.day||d.phase!==G.phase||d.cur!==G.cur||d.players.length!==G.players.length)return;
+ const walkTo=(o,q,r,hero)=>{const h=hexes.get(key(q,r));if(!h)return;o.userData.lock=true;walkObj(o,slotPos(h,hero&&(beastAt(h)||heroesAt(h).length>1)?-.34:0),620,()=>{o.userData.lock=false})};
+ const PF=['hp','maxHp','res','glory','dignityLost','kills','trophies','hunt','items','used','poison','soul','hidden','broken','ap','freeMoves','gatherBonus','cacBonus'];
+ d.players.forEach((s,i)=>{const p=G.players[i];PF.forEach(k=>{if(s[k]!==undefined)p[k]=s[k]});if(s.q!==p.q||s.r!==p.r){p.q=s.q;p.r=s.r;walkTo(p.obj,s.q,s.r,true)}});
+ const same=d.beasts.length===G.beasts.length&&d.beasts.every((s,i)=>s.kind===G.beasts[i].kind);
+ if(same)d.beasts.forEach((s,i)=>{const b=G.beasts[i];b.up=s.up||[];b.wound=s.wound||0;if(s.q!==b.q||s.r!==b.r){b.q=s.q;b.r=s.r;walkTo(b.obj,s.q,s.r)}});
+ else{const keyB=b=>b.kind+'@'+b.q+','+b.r,want=d.beasts.map(keyB);
+  G.beasts.forEach(b=>{if(!want.includes(keyB(b))){try{burst(b.obj.position.clone().add(new THREE.Vector3(0,.6,0)),50,0xf0c040,2,{up:true,life:1.1})}catch(e){}}removeBillboard(b.obj)});G.beasts=[];
+  d.beasts.forEach(s=>{const h=hexes.get(key(s.q,s.r));const b=spawn(s.kind,h,false);if(b){b.up=s.up||[];b.wound=s.wound||0;if(b.up.includes('ira')){b.obj.scale.setScalar(1.2);b.obj.userData.rage=true}}})}
+ cities.forEach((c,i)=>{const s=d.cities[i];if(s){c.card=s.card;c.deck=s.deck;c.done=s.done||[]}});
+ let si=0;allHex.filter(h=>RESOF[h.t]).forEach(h=>{if(d.stock&&d.stock[si]!==undefined)h.stock=d.stock[si];si++});
+ G.hunts=d.hunts;G.kindUps=d.kindUps||{};G.respawn=(d.respawn||[]).map(r=>typeof r==='string'?{kind:r}:r);G.omen=d.omen;
+ const nl=d.log||[],old=G.log[0];const fresh=[];for(const m of nl){if(m===old)break;fresh.push(m)}G.log=nl.slice();
+ fresh.slice(0,2).reverse().forEach((m,i)=>setTimeout(()=>toast(String(m).replace(/<[^>]+>/g,'')),i*900));
+ const f=d.fight;const was=NET.fight;NET.fight=f;
+ if(f&&!was){const w=G.players[f.who];const b=G.beasts.find(x=>x.kind===f.kind&&x.q===w.q&&x.r===w.r);if(b)try{signText('¡Combate!',b.obj)}catch(e){}}
+ update()}
+{const _rb=renderBattle;renderBattle=function(){const r=_rb.apply(this,arguments);netLiveSched();return r}}
