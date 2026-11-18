@@ -32,6 +32,7 @@ input{font-family:'VT323',monospace;font-size:20px;background:var(--ink);color:#
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:5px}.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
 .bar{height:9px;background:#120e18;border:1px solid #4a3d55;border-radius:2px;overflow:hidden}.bar>i{display:block;height:100%;background:linear-gradient(#ff7a5a,#c8402a)}
 .pip{display:inline-block;width:11px;height:11px;background:#e9b84e;border:2px solid #0a0820;border-radius:2px}.pip.off{background:#3a2f44}
+.pip.free{background:#5fd0e0;border-color:#0a0820;transform:rotate(45deg) scale(.9);margin-left:3px}
 .dot{display:inline-block;width:11px;height:11px;border:2px solid #0a0820;border-radius:50%;vertical-align:-1px}
 .res{display:inline-flex;align-items:center;gap:2px;margin-right:8px;white-space:nowrap}
 .ico{width:17px;height:17px;image-rendering:pixelated;vertical-align:-3px}.spr{image-rendering:pixelated}
@@ -138,6 +139,7 @@ input{font-family:'VT323',monospace;font-size:20px;background:var(--ink);color:#
 <div id="hud" class="hidden">
   <div class="win" id="topInfo"></div>
   <button class="win plain" style="padding:4px 6px" onclick="UI.board()" aria-label="Cartas de las ciudades" title="Cartas de las ciudades"><img id="boardIco" class="spr" style="width:22px;height:22px;display:block" alt=""></button>
+  <button class="win plain" style="padding:4px 6px" onclick="UI.boardBeasts()" aria-label="Bestias y cacerías" title="Bestias y cacerías"><img id="beastIco" class="spr" style="width:22px;height:22px;display:block" alt=""></button>
   <button class="win plain" id="bSnd" style="padding:6px 8px" onclick="UI.snd()" aria-label="Sonido">🔊</button>
   <button class="win plain" style="padding:6px 8px" onclick="UI.details()" aria-label="Héroe y crónica">☰</button>
 </div>
@@ -229,7 +231,7 @@ input{font-family:'VT323',monospace;font-size:20px;background:var(--ink);color:#
   <div class="g2" style="margin-top:10px"><button onclick="UI.help()">Cómo se juega</button><button onclick="UI.bestiary()">Bestiario</button></div><button id="bMenu" style="width:100%;margin-top:6px" onclick="UI.toMenu()">Volver al menú principal</button><button class="pri" style="width:100%;margin-top:6px" onclick="document.getElementById('ovDetails').classList.add('hidden')">Cerrar</button>
 </div></div>
 
-<div class="ov hidden" id="ovBoard"><div class="win"><div class="px gold" style="margin-bottom:8px">Cartas de las ciudades</div><div id="boardBody"></div>
+<div class="ov hidden" id="ovBoard"><div class="win"><div class="px gold" style="margin-bottom:8px" id="boardTitle">Cartas de las ciudades</div><div id="boardBody"></div>
   <button class="pri" style="width:100%;margin-top:6px" onclick="document.getElementById('ovBoard').classList.add('hidden')">Cerrar</button></div></div>
 
 <div class="ov hidden" id="ovEnd"><div class="win">

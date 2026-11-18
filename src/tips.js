@@ -13,3 +13,10 @@
  document.addEventListener('click',e=>{if(supp){supp=false;e.stopPropagation();e.preventDefault()}},true);
  document.addEventListener('contextmenu',e=>{if(e.target.closest&&e.target.closest('[data-tip]'))e.preventDefault()});
 })();
+
+/* ================= cerrar ventanas tocando afuera o con Escape ================= */
+(()=>{const CL=['ovDetails','ovBoard','ovBest','ovHelp'];
+ const close=o=>{if(!o||o.classList.contains('hidden'))return false;if(CL.includes(o.id)){o.classList.add('hidden');return true}if(o.id==='ovMsg'){try{UI.msgNext()}catch(e){o.classList.add('hidden')}return true}return false};
+ document.addEventListener('click',e=>{const o=e.target;if(o&&o.classList&&o.classList.contains('ov'))close(o)});
+ document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const open=[...document.querySelectorAll('.ov:not(.hidden)')].filter(o=>CL.includes(o.id)||o.id==='ovMsg').sort((a,b)=>(+getComputedStyle(b).zIndex||0)-(+getComputedStyle(a).zIndex||0));close(open[0])});
+})();
