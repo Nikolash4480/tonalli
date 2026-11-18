@@ -397,16 +397,16 @@ function beginTurn(){
  const off=camera.position.clone().sub(controls.target).normalize().multiplyScalar(dist);
  const toPlayer=()=>tweenCam(c.clone().add(off),c.clone(),1500,()=>{G.transition=false;update()},0);
  if(G.bossRage){const b=G.bossRage;G.bossRage=null;const bc=hexCenter(hexOf(b));const o2=off.clone().setLength(8);
-  setTimeout(()=>tweenCam(bc.clone().add(o2),bc.clone().add(new THREE.Vector3(0,.8,0)),2000,()=>{
+  setTimeout(()=>{signText('¡Furia del Quinto Sol!',b.obj);tweenCam(bc.clone().add(o2),bc.clone().add(new THREE.Vector3(0,.8,0)),1300,()=>{
    const pos=bc.clone().add(new THREE.Vector3(0,.9,0));b.obj.scale.setScalar(1.2);const fl=new THREE.PointLight(0xff5020,2.2,3,1.6);fl.position.set(0,1.2,0);b.obj.add(fl);b.obj.userData.rage=true;
    burst(pos,160,0xff3a10,3.8,{up:true,life:1.5});burst(pos,80,0xffd040,2.6,{up:true,life:1.2});ringFx(pos,0xff3a10,4,1);ringFx(pos,0xffd040,2.6,.7);flash(b.obj,0xff3a10,900);doShake(.4,1100);bloomKick=1.2;
-   setTimeout(()=>signText('¡Furia del Quinto Sol!',b.obj),1100);
-   setTimeout(()=>{msg(`¡${BEASTS[b.kind].name} se enfurece!`,`Último día: recibe la <b class="gold">Furia del Quinto Sol</b>.<br><span class="mut">+3 de fuerza y +1 de ataque · ahora fuerza ${strOf(b)}, ataque ${atkOf(b)}.</span><br>Vencerla da <b class="gold">${BEASTS[b.kind].glory+b.up.length} de gloria</b> y su trofeo.`,b.kind);toPlayer()},2700)},3),1800);
+   
+   setTimeout(()=>{msg(`¡${BEASTS[b.kind].name} se enfurece!`,`Último día: recibe la <b class="gold">Furia del Quinto Sol</b>.<br><span class="mut">+3 de fuerza y +1 de ataque · ahora fuerza ${strOf(b)}, ataque ${atkOf(b)}.</span><br>Vencerla da <b class="gold">${BEASTS[b.kind].glory+b.up.length} de gloria</b> y su trofeo.`,b.kind);toPlayer()},1300)},3)},600);
  }else if(G.bossIntro){const b=G.bossIntro;G.bossIntro=null;const bc=hexCenter(hexOf(b));const o2=off.clone().setLength(8);
-  setTimeout(()=>tweenCam(bc.clone().add(o2),bc.clone().add(new THREE.Vector3(0,.8,0)),2000,()=>{
+  setTimeout(()=>tweenCam(bc.clone().add(o2),bc.clone().add(new THREE.Vector3(0,.8,0)),1500,()=>{
    const pos=bc.clone().add(new THREE.Vector3(0,.8,0)),T=bossEntrance(b,pos),d=BEASTS[b.kind],I=BOSS_INFO[b.kind];
    setTimeout(()=>signText(I.sign,b.obj),T-1400);
-   setTimeout(()=>{msg(I.wake,`${I.how}<br><span class="mut">Nivel 4 · fuerza ${d.str} · ataque ${d.atk} · ${d.eff}.${I.pas?'<br>'+I.pas:''}</span><br>Vencerlo da <b class="gold">${d.glory} de gloria</b> y su trofeo (${TROPHY[d.trophy].name}: ${TROPHY[d.trophy].desc}).`,b.kind);toPlayer()},T)},3),2600);
+   setTimeout(()=>{msg(I.wake,`${I.how}<br><span class="mut">Nivel 4 · fuerza ${d.str} · ataque ${d.atk} · ${d.eff}.${I.pas?'<br>'+I.pas:''}</span><br>Vencerlo da <b class="gold">${d.glory} de gloria</b> y su trofeo (${TROPHY[d.trophy].name}: ${TROPHY[d.trophy].desc}).`,b.kind);toPlayer()},T)},3),1200);
  }else toPlayer();
  const bn=$('banner');bn.innerHTML=`${portrait(p.hero,44,p.hue)}<div><div class="px mut">Día ${G.day}/${G.days} · ${G.stage?'Ocaso eterno':PHASES[G.phase]}</div><div class="px" style="font-size:11px;color:${p.color};margin-top:4px">Turno de ${p.name}</div><div class="mut" style="font-size:17px">${p.ap} PA · vida ${p.hp}/${p.maxHp}</div></div>`;
  bn.classList.remove('show');void bn.offsetWidth;bn.classList.add('show');clearTimeout(beginTurn.t);beginTurn.t=setTimeout(()=>bn.classList.remove('show'),2800);
