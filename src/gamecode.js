@@ -231,7 +231,7 @@ function drawOmen(){const P={no:0,ocasionales:.35,frecuentes:.65}[G.omenMode||'o
 
 /* guardado */
 const midAction=()=>!!(G&&!G.over&&(G.walking||G.transition||G.mode!=='act'||G.pending||G.rp||(G.pendingRespawn&&G.pendingRespawn.length)));
-function snapState(mid){return{v:1,mid:!!mid,lvlKind:G.lvlKind||null,stage:G.stage||null,stageDone:!!G.stageDone,bestias:G.bestias,bossKind:G.bossKind,extras:G.extras,altars:G.altars,respawnMode:G.respawnMode,omenMode:G.omenMode,seed:SEED,day:G.day,days:G.days,phase:G.phase,cur:G.cur,start:G.start,turnCount:G.turnCount,respawn:G.respawn,hunts:G.hunts,kindUps:G.kindUps||{},bossDone:!!G.bossDone,omen:G.omen||null,log:G.log.slice(0,30),
+function snapState(mid){return{v:1,dayNews:G.dayNews||null,mid:!!mid,lvlKind:G.lvlKind||null,stage:G.stage||null,stageDone:!!G.stageDone,bestias:G.bestias,bossKind:G.bossKind,extras:G.extras,altars:G.altars,respawnMode:G.respawnMode,omenMode:G.omenMode,seed:SEED,day:G.day,days:G.days,phase:G.phase,cur:G.cur,start:G.start,turnCount:G.turnCount,respawn:G.respawn,hunts:G.hunts,kindUps:G.kindUps||{},bossDone:!!G.bossDone,omen:G.omen||null,log:G.log.slice(0,30),
  players:G.players.map(p=>({name:p.name,hero:p.hero,color:p.color,hue:p.hue||0,hp:p.hp,maxHp:p.maxHp,res:p.res,glory:p.glory,dignityLost:p.dignityLost,kills:p.kills,trophies:p.trophies,hunt:p.hunt,items:p.items,used:p.used||{},poison:p.poison||0,soul:p.soul||0,hidden:p.hidden||null,broken:p.broken||null,ap:p.ap||0,freeMoves:p.freeMoves||0,gatherBonus:!!p.gatherBonus,cacBonus:!!p.cacBonus,q:p.q,r:p.r})),
  beasts:G.beasts.map(b=>({kind:b.kind,q:b.q,r:b.r,up:b.up,wound:b.wound||0})),cities:cities.map(c=>({card:c.card,deck:c.deck,done:c.done||[]})),stock:allHex.filter(h=>RESOF[h.t]).map(h=>h.stock)}}
 function saveGame(mid){if(!G||G.over)return;try{const d=snapState(mid);
@@ -239,7 +239,7 @@ function saveGame(mid){if(!G||G.over)return;try{const d=snapState(mid);
 function clearSave(){try{localStorage.removeItem(SAVE_KEY)}catch(e){}}
 function continueGame(){const d=SAVED;try{
  controls.autoRotate=false;[coy,ahu,cip,hero,ally].forEach(o=>removeBillboard(o));
- G={lvlKind:d.lvlKind||null,stage:d.stage||null,stageDone:!!d.stageDone,bestias:d.bestias||'clasicas',bossKind:d.bossKind||'xiuhcoatl',extras:d.extras||'ninguno',altars:!!d.altars,respawnMode:d.respawnMode||'auto',omenMode:d.omenMode||'ocasionales',hunts:d.hunts,kindUps:d.kindUps||{},players:[],beasts:[],respawn:(d.respawn||[]).map(r=>typeof r==='string'?{kind:r}:r),day:d.day,days:d.days,phase:d.phase,cur:d.cur,start:d.start,turnCount:d.turnCount,mode:'act',sel:null,log:d.log||[],bossDone:d.bossDone,omen:d.omen,resumeMid:!!d.mid};
+ G={lvlKind:d.lvlKind||null,stage:d.stage||null,stageDone:!!d.stageDone,bestias:d.bestias||'clasicas',bossKind:d.bossKind||'xiuhcoatl',extras:d.extras||'ninguno',altars:!!d.altars,respawnMode:d.respawnMode||'auto',omenMode:d.omenMode||'ocasionales',hunts:d.hunts,kindUps:d.kindUps||{},players:[],beasts:[],respawn:(d.respawn||[]).map(r=>typeof r==='string'?{kind:r}:r),day:d.day,days:d.days,phase:d.phase,cur:d.cur,start:d.start,turnCount:d.turnCount,mode:'act',sel:null,log:d.log||[],bossDone:d.bossDone,omen:d.omen,resumeMid:!!d.mid,dayNews:d.dayNews||null};
  G.players=d.players.map((s,i)=>{const o=Object.assign({ap:0,freeMoves:0,gatherBonus:false},s);o.kills=Object.assign(KILL0(),o.kills);o.trophies=Object.assign({hueso:0,garra:0,colmillo:0,corazon:0,pielsol:0,aguijon:0,ala:0,disco:0},o.trophies);o.obj=makeBillboard(o.hero,1,parseInt(o.color.slice(1),16),o.hue);o.obj.position.copy(hexCenter(hexOf(o)));return o});
  d.beasts.forEach(s=>{const h=hexes.get(key(s.q,s.r));const b=spawn(s.kind,h,false);if(b){b.up=s.up||[];b.wound=s.wound||0;if(b.up.includes('ira')){b.obj.scale.setScalar(1.2);const fl=new THREE.PointLight(0xff5020,2.2,3,1.6);fl.position.set(0,1.2,0);b.obj.add(fl);b.obj.userData.rage=true}}});
  cities.forEach((c,i)=>{c.card=d.cities[i].card;c.deck=d.cities[i].deck;c.done=d.cities[i].done||[]});
@@ -388,10 +388,14 @@ function phDraw(e){const cv=$('phCv');if(!cv||!phAnim&&e<1)return;const a=phAnim
  x.fillStyle='rgba(20,14,24,.85)';x.fillRect(0,H-3,W,3)}
 
 function focusOn(p,dur=800){const c=hexCenter(hexOf(p));const off=camera.position.clone().sub(controls.target);off.setLength(Math.max(14,Math.min(off.length(),22)));tweenCam(c.clone().add(off),c.clone().add(new THREE.Vector3(0,.4,0)),dur)}
+const newsSeenHere={};
+function showDayNews(){const N=G.dayNews;if(!N||N.day!==G.day||G.tut)return;const online=typeof NET!=='undefined'&&NET.on;
+ if(online){if(newsSeenHere[N.day])return;newsSeenHere[N.day]=true}else{N.seen=N.seen||[];if(N.seen.includes(G.cur))return;N.seen.push(G.cur)}
+ const p=curP();setTimeout(()=>msg(N.title,`${online?'Al amanecer':'Mientras esperabas, al amanecer'} se mejoraron estas bestias:${N.html}`),1700)}
 function beginTurn(){
  const mid=G.resumeMid;G.resumeMid=false;saveGame(mid);
  const p=curP();if(!mid){if(p.poison>0){p.poison--;if(p.hp>1){p.hp--;setTimeout(()=>{floatText('-1 veneno',p.obj.position.clone().add(new THREE.Vector3(0,1.4,0)),'#7ad06a',.9);burst(p.obj.position.clone().add(new THREE.Vector3(0,.7,0)),20,0x7ad06a,1.2,{up:true,life:1})},900)}log(`${p.name} sufre el veneno de Yappan (${p.poison} turnos más).`)}p.ap=maxAP(p);p.freeMoves=(p.hero==='aguila'?1:0)+(has(p,'cactli')?1:0)+(omen('viento')?1:0);p.gatherBonus=false;p.cacBonus=has(p,'cacaxtli')}/* al retomar a mitad de turno se conservan PA y bonos */
- G.mode='act';G.pending=null;G.sel=hexOf(p);setPhaseLight();G.transition=true;
+ G.mode='act';G.pending=null;G.sel=hexOf(p);setPhaseLight();G.transition=true;showDayNews();
  const pc=hexCenter(hexOf(p));const asp=innerWidth/innerHeight;const tanH=Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*asp;
  const dist=clamp(11/tanH,15,asp>1?31:24);const follow=asp>1?.25:.65;const c=new THREE.Vector3(0,.5,0).lerp(pc,follow);
  const off=camera.position.clone().sub(controls.target).normalize().multiplyScalar(dist);
@@ -436,7 +440,7 @@ function dawn(){
  G.players.forEach(p=>{if(p.soul){p.maxHp+=p.soul;p.soul=0}p.hidden=null;p.hp=Math.min(p.maxHp,p.hp+1);p.used={}});
  if(G.respawnMode==='auto')G.respawn=G.respawn.filter(r=>!spawn(r.kind,randomRespawnHex(r.kind),true));
  else{G.pendingRespawn=G.respawn.splice(0)}
- if(G.day===G.days){const bb=G.beasts.find(x=>BEASTS[x.kind].boss);if(bb&&bb.kind!=='guerrero'&&!upN(bb,'ira')){bb.up.push('ira');G.bossRage=bb;log(`¡${BEASTS[bb.kind].name} recibe la Furia del Quinto Sol!`)}}
+ if(G.day===G.days){const bb=G.beasts.find(x=>BEASTS[x.kind].boss);if(bb&&bb.kind!=='guerrero'&&!upN(bb,'ira')){bb.up.push('ira');G.bossRage=bb;{const card=`<div class="card" style="text-align:left;margin:8px 0"><div class="row" style="gap:8px">${portrait(bb.kind,40)}<div><b>${BEASTS[bb.kind].name}</b><div style="font-size:15px;opacity:.7">Nivel 4</div></div></div><div style="margin-top:6px;padding-top:6px;border-top:1px dashed #b08a50"><b style="color:#b02a10">+ Furia del Quinto Sol</b><div style="font-size:16px">+3 de fuerza y +1 de ataque</div></div></div>`;G.dayNews=G.dayNews&&G.dayNews.day===G.day?(G.dayNews.html+=card,G.dayNews):{day:G.day,title:'Las bestias se fortalecen',html:card,seen:[G.start]}}log(`¡${BEASTS[bb.kind].name} recibe la Furia del Quinto Sol!`)}}
  drawOmen();
  if(G.days>=7&&G.day===6&&!G.bossDone){G.bossDone=true;const bk=G.bossKind||'xiuhcoatl',li=BOSS_INFO[bk].lair;const pool=li==='any'?allHex.filter(canHold):allHex.filter(x=>x.t===li&&canHold(x));const h=pool.length?rpick(pool):rpick(allHex.filter(canHold));if(h){const b=spawn(bk,h,false);b.obj.visible=false;G.bossIntro=b;log(`¡${BOSS_INFO[bk].wake.replace(/[¡!]/g,'')}!`)}}
  upgradeBeasts();
@@ -454,7 +458,7 @@ function upgradeBeasts(){const plan=(UP_PLAN[G.days]||UP_PLAN[7])[G.day];if(!pla
  if(!got.length)return;
  log('Se fortalecen: '+got.map(([kind,k])=>`${BEASTS[kind].name} (${UPGRADES[k].name})`).join(', ')+'.');
  const cards=got.map(([kind,k])=>`<div class="card" style="text-align:left;margin:8px 0"><div class="row" style="gap:8px">${portrait(kind,40)}<div><b>${BEASTS[kind].name}</b><div style="font-size:15px;opacity:.7">Nivel ${BEASTS[kind].lvl}</div></div></div><div style="margin-top:6px;padding-top:6px;border-top:1px dashed #b08a50"><b style="color:#7a3c9a">+ ${UPGRADES[k].name}</b><div style="font-size:16px">${UPGRADES[k].desc}</div></div></div>`).join('');
- const boss=got.some(([kind])=>BEASTS[kind].boss);
+ const boss=got.some(([kind])=>BEASTS[kind].boss);G.dayNews=G.dayNews&&G.dayNews.day===G.day?(G.dayNews.html=cards+G.dayNews.html,G.dayNews):{day:G.day,title:'Las bestias se fortalecen',html:cards,seen:[G.start]};newsSeenHere[G.day]=true;
  setTimeout(()=>msg('Las bestias se fortalecen',`${boss?bossName()+' se fortalece.':'Cada una de estas bestias recibe una mejora. Las que reaparezcan llegan con las mismas mejoras.'}${cards}`),boss?9800:2000)}
 function ko(p,why){
  if(G&&p===curP()&&!G.over)G.endAfterKO=true;
@@ -865,7 +869,7 @@ function bossRoar(b,pos){if(!b||!b.obj)return;const U=b.obj.userData,D=ATK_DUR[b
  setTimeout(()=>{ringFx(pos,c,3,.7);burst(pos,50,c,2.4,{up:true,life:1});doShake(.2,500)},250)}
 {const _be=bossEntrance;bossEntrance=function(b,pos){const T=_be(b,pos);setTimeout(()=>bossRoar(b,pos),Math.max(600,T-1300));return T}}
 /* ================= stage: El Guerrero sin Sol ================= */
-const STAGE_P=.10;
+const STAGE_P=.20;
 const STAGE_LIGHT={sun:[-12,4.5,5],sc:0xff4a28,si:2.1,hs:0xd87060,hg:0x5a2a20,hi:1.05,bg:0x5a0e14,fog:0x6a1418,exp:1.1,night:.45};
 let stageFx=null;
 function stageAsh(on){if(on&&!stageFx){const N=260,g=new THREE.BufferGeometry(),P=new Float32Array(N*3);for(let i=0;i<N;i++){P[i*3]=(Math.random()-.5)*30;P[i*3+1]=Math.random()*12;P[i*3+2]=(Math.random()-.5)*30}g.setAttribute('position',new THREE.BufferAttribute(P,3));
